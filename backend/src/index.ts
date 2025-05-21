@@ -1,13 +1,23 @@
-import express from "express";
+import express from 'express';
+import profileRoutes from './routes/profile'; // Adjust path as needed
 import cors from "cors";
-import routes from "./routes";
 
 const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", routes);
+// Routes
+app.use('/api/profiles', profileRoutes);
 
-app.listen(3001, () => {
-  console.log("Backend running at http://localhost:3001");
+// Basic health check
+app.get('/', (req, res) => {
+  res.send('Profile Service is running');
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
