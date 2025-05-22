@@ -51,7 +51,6 @@ router.get("/", async (_req: Request, res: Response) => {
 });
 
 
-
 // Create or update profile
 router.post("/", async (req: Request, res: Response) => {
   try {
@@ -84,6 +83,25 @@ router.post("/", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error creating profile:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Delete profile
+router.delete("/:userId", async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId;
+    const profileRef = db.collection("profiles").doc(userId);
+    const doc = await profileRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    await profileRef.delete();
+    res.json({ message: "Profile deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting profile:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
