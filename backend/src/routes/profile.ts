@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db } from "../firebase"; // Adjust path as needed
+import { db } from "../firebase";
 import bcrypt from "bcrypt";
 
 const router = Router();
@@ -20,13 +20,22 @@ router.get("/:userId", async (req: Request, res: Response) => {
     const userId = req.params.userId;
     const profileRef = db.collection("profiles").doc(userId);
     const doc = await profileRef.get();
-    console.log("Document data:", doc.data());
 
     if (!doc.exists) {
       return res.status(404).json({ error: "Profile not found" });
     }
 
-    res.json(doc.data());
+    const profileData = doc.data() as Profile;
+
+    if (!profileData) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    const { password, ...profileDatawithoutPassword } =  profileData
+  
+    // TESTING PURPOSES
+    //console.log("Document data:", profileDatawithoutPassword);
+    res.json(profileDatawithoutPassword);
   } catch (error) {
     console.error("Error fetching profile:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -36,6 +45,27 @@ router.get("/:userId", async (req: Request, res: Response) => {
 
 // List all profiles (basic info)
 router.get("/", async (_req: Request, res: Response) => {
+  try {
+    const snapshot = await db.collection("profiles").get();
+    const profiles = snapshot.docs.map(doc => {
+      const data = doc.data() || {};
+      const { password, ...profileWithoutPassword  } = data; // Exclude password for security
+      return {
+        id: doc.id,
+        ...profileWithoutPassword
+      };
+    });
+
+    res.json(profiles);
+  } catch (error) {
+    console.error("Error listing profiles:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+// List all profiles which includes password (for testing purposes only)
+router.get("/all", async (_req: Request, res: Response) => {
   try {
     const snapshot = await db.collection("profiles").get();
     const profiles = snapshot.docs.map(doc => ({
@@ -86,6 +116,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 // Delete profile
 router.delete("/:userId", async (req: Request, res: Response) => {
