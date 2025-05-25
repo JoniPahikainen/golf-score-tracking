@@ -1,0 +1,14 @@
+export interface Round {
+  profileId: string;
+  date: string;
+  courseId: string;
+  hcpAtTiem?: number;
+  holes: {
+    holeNumber: number;
+    strokes: number;
+    putts?: number;
+    fairwayHit?: boolean;
+    greenInReg?: boolean;
+  }[];
+  totalScore?: number;
+}

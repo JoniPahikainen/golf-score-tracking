@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import profileRouter from '../src/routes/profile';
+import profileRouter from '../src/routes/user';
 import bcrypt from 'bcrypt';
 
 const mockDB: Record<string, any> = {};

@@ -1,5 +1,5 @@
 import express from 'express';
-import profileRoutes from './routes/profile'; // Adjust path as needed
+import profileRoutes from './routes/user'; // Adjust path as needed
 import cors from "cors";
 
 const app = express();
