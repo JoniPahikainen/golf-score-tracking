@@ -1,21 +1,24 @@
-import { useEffect, useState } from "react";
+import { Routes, Route, Link } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import PlayPage from "./pages/PlayPage";
+import LoginPage from "./pages/LoginPage";
+import StartRoundPage from "./pages/StartRoundPage";
 
 function App() {
-  const [score, setScore] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch("http://localhost:3001/api/score")
-      .then((res) => res.json())
-      .then((data) => setScore(data.score));
-  }, []);
-
   return (
-    <div className="max-w-md mx-auto min-h-screen p-4 bg-green-50">
-      <h1 className="text-2xl font-bold text-center mb-4">🏌️ Golf Score</h1>
-      <div className="bg-white rounded-lg p-6 shadow text-center">
-        <p className="text-lg">Your Score</p>
-        <p className="text-4xl font-bold text-green-600">{score ?? "..."}</p>
-      </div>
+    <div className="min-h-screen bg-gray-100">
+      <nav className="bg-white shadow p-4 flex justify-center gap-4">
+        <Link to="/" className="text-blue-600 hover:underline">Home</Link>
+        <Link to="/start" className="text-blue-600 hover:underline">Start Round</Link>
+        <Link to="/play" className="text-blue-600 hover:underline">Play</Link>
+        <Link to="/login" className="text-blue-600 hover:underline">Login</Link> {/* 👈 Add this */}
+      </nav>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/play" element={<PlayPage />} />
+        <Route path="/start" element={<StartRoundPage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
     </div>
   );
 }
