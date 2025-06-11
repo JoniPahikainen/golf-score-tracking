@@ -183,8 +183,14 @@ const StartRoundPage = () => {
 
       {/* MODE Modal */}
       {modalType === "mode" && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-80 shadow-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+          onClick={() => setModalType(null)}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-80 shadow-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="font-bold text-lg mb-4">Select Mode</h2>
             <select
               value={mode}
@@ -204,8 +210,14 @@ const StartRoundPage = () => {
 
       {/* HOLES Modal */}
       {modalType === "holes" && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-80 shadow-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+          onClick={() => setModalType(null)}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-80 shadow-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="font-bold text-lg mb-4">Select Holes</h2>
             <select
               value={holes}
@@ -224,8 +236,14 @@ const StartRoundPage = () => {
 
       {/* PLAYERS Modal */}
       {modalType === "player" && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[90%] max-w-md shadow-md">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+          onClick={() => setModalType(null)}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-80 shadow-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="font-bold text-lg mb-4">Add Player</h2>
 
             <input
