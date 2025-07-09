@@ -28,7 +28,9 @@ const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-  const [popup, setPopup] = useState<{ playerId: string | null }>({ playerId: null });
+  const [popup, setPopup] = useState<{ playerId: string | null }>({
+    playerId: null,
+  });
   const { toast } = useToast();
 
   const updateHole = (
@@ -52,9 +54,10 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
   };
 
   const calculateCurrentScore = (player: Player) =>
-    player.holes
-      .slice(0, currentHoleIndex + 1)
-      .reduce((total, hole, i) => total + (hole.strokes - DEFAULT_PAR[i]), 0);
+    player.holes.slice(0, currentHoleIndex + 1).reduce((total, hole, i) => {
+      const strokes = hole.strokes || DEFAULT_PAR[i]; // assume par if 0
+      return total + (strokes - DEFAULT_PAR[i]);
+    }, 0);
 
   const renderPopup = (player: Player) => {
     if (popup.playerId !== player.id) return null;
@@ -65,12 +68,19 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white text-black  rounded-xl p-6 text-center shadow-md w-72 space-y-4">
-          <h2 className="text-lg font-bold">{player.name} – Hole {currentHoleIndex + 1}</h2>
+          <h2 className="text-lg font-bold">
+            {player.name} – Hole {currentHoleIndex + 1}
+          </h2>
           <div className="text-sm text-muted-foreground">Par {par}</div>
           <div className="flex items-center justify-between">
             <Button
               onClick={() =>
-                updateHole(player.id, currentHoleIndex, "strokes", Math.max(0, hole.strokes - 1))
+                updateHole(
+                  player.id,
+                  currentHoleIndex,
+                  "strokes",
+                  Math.max(0, hole.strokes - 1)
+                )
               }
             >
               -1
@@ -78,13 +88,21 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
             <div className="text-2xl">{hole.strokes || par}</div>
             <Button
               onClick={() =>
-                updateHole(player.id, currentHoleIndex, "strokes", hole.strokes + 1)
+                updateHole(
+                  player.id,
+                  currentHoleIndex,
+                  "strokes",
+                  (hole.strokes || par) + 1
+                )
               }
             >
               +1
             </Button>
           </div>
-          <Button variant="outline" onClick={() => setPopup({ playerId: null })}>
+          <Button
+            variant="outline"
+            onClick={() => setPopup({ playerId: null })}
+          >
             Done
           </Button>
         </div>
@@ -103,11 +121,17 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
 
       {/* Hole Navigation */}
       <div className="flex justify-between items-center">
-        <Button variant="ghost" onClick={() => setCurrentHoleIndex((i) => Math.max(0, i - 1))}>
+        <Button
+          variant="ghost"
+          onClick={() => setCurrentHoleIndex((i) => Math.max(0, i - 1))}
+        >
           <ChevronLeft />
         </Button>
         <div className="font-bold text-lg">Hole {currentHoleIndex + 1}</div>
-        <Button variant="ghost" onClick={() => setCurrentHoleIndex((i) => Math.min(17, i + 1))}>
+        <Button
+          variant="ghost"
+          onClick={() => setCurrentHoleIndex((i) => Math.min(17, i + 1))}
+        >
           <ChevronRight />
         </Button>
       </div>
@@ -122,7 +146,8 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
               <div>
                 <div className="font-medium">{player.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  Score: {score > 0 ? `+${score}` : score} ({hole.strokes || "0"})
+                  Score: {score > 0 ? `+${score}` : score} (
+                  {hole.strokes || "0"})
                 </div>
               </div>
               <Button
@@ -130,7 +155,9 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
                 variant="outline"
                 onClick={() => setPopup({ playerId: player.id })}
               >
-                {hole.strokes > 0 ? hole.strokes : DEFAULT_PAR[currentHoleIndex]}
+                {hole.strokes > 0
+                  ? hole.strokes
+                  : DEFAULT_PAR[currentHoleIndex]}
               </Button>
             </div>
             {renderPopup(player)}
@@ -161,13 +188,37 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
         </Button>
         <Button
           onClick={() => {
-            const hasScores = players.some((p) => p.holes.some((h) => h.strokes > 0));
-            if (!hasScores) {
-              toast({ title: "No scores entered", variant: "destructive" });
-              return;
-            }
+            // Calculate and print score regardless of missing input
+            const scores = players.map((player) => {
+              let totalStrokes = 0;
+              let totalPar = 0;
+
+              player.holes.forEach((hole, i) => {
+                const strokes = hole.strokes || DEFAULT_PAR[i];
+                totalStrokes += strokes;
+                totalPar += DEFAULT_PAR[i];
+              });
+
+              const scoreRelative = totalStrokes - totalPar;
+              const scoreStr =
+                scoreRelative === 0
+                  ? "0"
+                  : scoreRelative > 0
+                  ? `+${scoreRelative}`
+                  : `${scoreRelative}`;
+
+              return {
+                name: player.name,
+                strokes: totalStrokes,
+                relative: scoreStr,
+              };
+            });
+
             toast({ title: "Scores saved!" });
-            console.log("Saving:", players);
+            console.log("Final Scores:");
+            scores.forEach((s) =>
+              console.log(`${s.name} – ${s.strokes} (${s.relative})`)
+            );
           }}
         >
           Save All
