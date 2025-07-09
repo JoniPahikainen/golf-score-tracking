@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,11 +23,23 @@ interface ScoreEntryProps {
   onExit?: () => void;
 }
 
+interface PopupProps {
+  player: Player;
+  holeIndex: number;
+  par: number;
+  initialStrokes: number;
+  onClose: () => void;
+  onSave: (strokes: number) => void;
+}
+
 const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 
 export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
+  const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
+    new Set()
+  );
   const [popup, setPopup] = useState<{ playerId: string | null }>({
     playerId: null,
   });
@@ -53,55 +65,93 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
     );
   };
 
+  const toggleExpanded = (playerId: string) => {
+    setExpandedPlayerIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(playerId)) newSet.delete(playerId);
+      else newSet.add(playerId);
+      return newSet;
+    });
+  };
+
+  const renderFullScorecard = (player: Player) => {
+  const rows = [player.holes.slice(0, 9), player.holes.slice(9, 18)];
+  return (
+    <div className="mt-4 space-y-2">
+      {rows.map((row, rowIndex) => (
+        <div key={rowIndex} className="grid grid-cols-9 gap-1">
+          {row.map((hole) => {
+            const strokes = hole.strokes;
+            const displayScore =
+              hole.holeNumber - 1 <= currentHoleIndex
+                ? strokes === 0
+                  ? "" // blank if 0
+                  : strokes != null
+                  ? strokes
+                  : DEFAULT_PAR[hole.holeNumber - 1]
+                : "";
+            return (
+              <div key={hole.holeNumber} className="text-center">
+                <div className="text-xs font-semibold text-gray-500">
+                  {hole.holeNumber}
+                </div>
+                <div className="border rounded p-1 text-sm min-h-[1.75rem]">
+                  {displayScore}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
   const calculateCurrentScore = (player: Player) =>
     player.holes.slice(0, currentHoleIndex + 1).reduce((total, hole, i) => {
-      const strokes = hole.strokes || DEFAULT_PAR[i]; // assume par if 0
+      const strokes = hole.strokes || DEFAULT_PAR[i];
       return total + (strokes - DEFAULT_PAR[i]);
     }, 0);
 
-  const renderPopup = (player: Player) => {
-    if (popup.playerId !== player.id) return null;
+  const StrokePopup: React.FC<PopupProps> = ({
+    player,
+    holeIndex,
+    par,
+    initialStrokes,
+    onClose,
+    onSave,
+  }) => {
+    const [popupStrokes, setPopupStrokes] = React.useState(initialStrokes);
 
-    const hole = player.holes[currentHoleIndex];
-    const par = DEFAULT_PAR[currentHoleIndex];
+    React.useEffect(() => {
+      setPopupStrokes(initialStrokes);
+    }, [initialStrokes]);
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white text-black  rounded-xl p-6 text-center shadow-md w-72 space-y-4">
+        <div className="bg-white text-black rounded-xl p-6 text-center shadow-md w-72 space-y-4">
           <h2 className="text-lg font-bold">
-            {player.name} – Hole {currentHoleIndex + 1}
+            {player.name} – Hole {holeIndex + 1}
           </h2>
           <div className="text-sm text-muted-foreground">Par {par}</div>
           <div className="flex items-center justify-between">
             <Button
-              onClick={() =>
-                updateHole(
-                  player.id,
-                  currentHoleIndex,
-                  "strokes",
-                  Math.max(0, hole.strokes - 1)
-                )
-              }
+              onClick={() => setPopupStrokes((prev) => Math.max(0, prev - 1))}
             >
               -1
             </Button>
-            <div className="text-2xl">{hole.strokes || par}</div>
-            <Button
-              onClick={() =>
-                updateHole(
-                  player.id,
-                  currentHoleIndex,
-                  "strokes",
-                  (hole.strokes || par) + 1
-                )
-              }
-            >
+            <div className="text-2xl">{popupStrokes}</div>
+            <Button onClick={() => setPopupStrokes((prev) => prev + 1)}>
               +1
             </Button>
           </div>
           <Button
             variant="outline"
-            onClick={() => setPopup({ playerId: null })}
+            onClick={() => {
+              onSave(popupStrokes);
+              onClose();
+            }}
           >
             Done
           </Button>
@@ -109,6 +159,18 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
       </div>
     );
   };
+
+  // New function to print player data clearly to console
+  const logPlayerData = () => {
+  players.forEach((player) => {
+    console.log(`Player: ${player.name}`);
+    player.holes.forEach((hole) => {
+      const strokesDisplay = hole.strokes === 0 ? " " : hole.strokes;
+      console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
+    });
+  });
+};
+
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto">
@@ -141,7 +203,14 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
         const hole = player.holes[currentHoleIndex];
         const score = calculateCurrentScore(player);
         return (
-          <Card key={player.id} className="p-4">
+          <Card
+            key={player.id}
+            className="p-4 cursor-pointer"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("button")) return;
+              toggleExpanded(player.id);
+            }}
+          >
             <div className="flex justify-between items-center">
               <div>
                 <div className="font-medium">{player.name}</div>
@@ -160,13 +229,31 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
                   : DEFAULT_PAR[currentHoleIndex]}
               </Button>
             </div>
-            {renderPopup(player)}
+
+            {expandedPlayerIds.has(player.id) && renderFullScorecard(player)}
+            {popup.playerId === player.id && (
+              <StrokePopup
+                player={player}
+                holeIndex={currentHoleIndex}
+                par={DEFAULT_PAR[currentHoleIndex]}
+                initialStrokes={
+                  player.holes[currentHoleIndex].strokes &&
+                  player.holes[currentHoleIndex].strokes > 0
+                    ? player.holes[currentHoleIndex].strokes
+                    : DEFAULT_PAR[currentHoleIndex]
+                }
+                onSave={(newStrokes) =>
+                  updateHole(player.id, currentHoleIndex, "strokes", newStrokes)
+                }
+                onClose={() => setPopup({ playerId: null })}
+              />
+            )}
           </Card>
         );
       })}
 
       {/* Actions */}
-      <div className="flex justify-between pt-2">
+      <div className="flex justify-between pt-2 space-x-2">
         <Button
           variant="outline"
           onClick={() =>
@@ -186,19 +273,21 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
         >
           Reset All
         </Button>
+
         <Button
           onClick={() => {
-            // Calculate and print score regardless of missing input
-            const scores = players.map((player) => {
+            toast({ title: "Scores saved!" });
+            console.log("Final Scores:");
+            players.forEach((player) => {
               let totalStrokes = 0;
               let totalPar = 0;
-
+              console.log(`\n${player.name}`);
               player.holes.forEach((hole, i) => {
                 const strokes = hole.strokes || DEFAULT_PAR[i];
                 totalStrokes += strokes;
                 totalPar += DEFAULT_PAR[i];
+                console.log(`  Hole ${i + 1}: ${strokes} (${DEFAULT_PAR[i]})`);
               });
-
               const scoreRelative = totalStrokes - totalPar;
               const scoreStr =
                 scoreRelative === 0
@@ -206,22 +295,15 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
                   : scoreRelative > 0
                   ? `+${scoreRelative}`
                   : `${scoreRelative}`;
-
-              return {
-                name: player.name,
-                strokes: totalStrokes,
-                relative: scoreStr,
-              };
+              console.log(`  Total: ${totalStrokes} (${scoreStr})`);
             });
-
-            toast({ title: "Scores saved!" });
-            console.log("Final Scores:");
-            scores.forEach((s) =>
-              console.log(`${s.name} – ${s.strokes} (${s.relative})`)
-            );
           }}
         >
           Save All
+        </Button>
+
+        <Button variant="outline" onClick={logPlayerData}>
+          Print Data to Console
         </Button>
       </div>
     </div>
