@@ -1,5 +1,5 @@
 export interface Round {
-  profileId: string;
+  userId: string;
   date: string;
   courseId: string;
   hcpAtTiem?: number;

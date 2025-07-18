@@ -6,11 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, User, Calendar } from "lucide-react";
-import { StartRound, BasicPlayer } from "../StartRound";
-import { ScoreEntry } from "../ScoreEntry";
-import { RoundHistory } from "../RoundHistory";
-import { UserProfile } from "../UserProfile";
+import { StartRound, BasicPlayer } from "@/pages/StartRoundPage";
+import { ScoreEntry } from "@/pages/ScoreEntryPage";
+import { RoundHistory } from "@/pages/RoundHistoryPage";
+import { UserProfile } from "@/pages/UserProfilePage";
+import { Plus, Calendar, User } from "lucide-react";
+
 
 interface MainAppTabsProps {
   activeTab: string;

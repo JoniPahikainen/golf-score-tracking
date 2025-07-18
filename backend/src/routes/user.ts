@@ -70,9 +70,9 @@ router.get("/all", async (_req: Request, res: Response) => {
 // Create or update user
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { userName, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!userName || !email || !password) {
       return res.status(400).json({
         error: "Missing required fields",
         required: ["name", "email", "password"],
@@ -82,7 +82,7 @@ router.post("/", async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const userData: User = {
-      userName: name,
+      userName: userName,
       email,
       password: hashedPassword,
       createdAt: new Date(),
@@ -94,7 +94,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.status(201).json({
       message: "User created successfully",
       userId: userRef.id,
-      name,
+      userName,
       email,
     });
   } catch (error) {
