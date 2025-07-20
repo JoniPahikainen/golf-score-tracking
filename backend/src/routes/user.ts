@@ -70,12 +70,12 @@ router.get("/all", async (_req: Request, res: Response) => {
 // Create or update user
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { userName, email, password } = req.body;
+    const { userName, password } = req.body;
 
-    if (!userName || !email || !password) {
+    if (!userName || !password) {
       return res.status(400).json({
         error: "Missing required fields",
-        required: ["name", "email", "password"],
+        required: ["name", "password"],
       });
     }
 
@@ -83,7 +83,6 @@ router.post("/", async (req: Request, res: Response) => {
 
     const userData: User = {
       userName: userName,
-      email,
       password: hashedPassword,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -95,7 +94,7 @@ router.post("/", async (req: Request, res: Response) => {
       message: "User created successfully",
       userId: userRef.id,
       userName,
-      email,
+
     });
   } catch (error) {
     console.error("Error creating user:", error);

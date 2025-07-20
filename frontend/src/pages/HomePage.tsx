@@ -5,6 +5,7 @@ import { RegisterForm } from "@/pages/RegisterForm";
 import { MainAppTabs } from "@/components/app/MainAppTabs";
 import { useState } from "react";
 import { BasicPlayer } from "@/pages/StartRoundPage";
+import api from "@/api/axios"; // ✅ NEW
 
 export const HomePage = () => {
   const {
@@ -14,7 +15,6 @@ export const HomePage = () => {
     password,
     setPassword,
     handleLogin,
-    handleRegister,
     handleLogout,
     mode,
     setMode,
@@ -23,6 +23,35 @@ export const HomePage = () => {
   const [activeTab, setActiveTab] = useState("score");
   const [roundPlayers, setRoundPlayers] = useState<BasicPlayer[] | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleRegister = async () => {
+    try {
+      const response = await api.post("/profiles", {
+        userName,
+        password,
+      });
+
+      console.log("Registered:", response.data);
+      alert("User registered successfully!");
+      setMode("login");
+    } catch (error: any) {
+  console.error("Register error:", error);
+
+  // Log more detail if it's an Axios error
+  if (error.response) {
+    console.error("Response data:", error.response.data);
+    console.error("Status:", error.response.status);
+    console.error("Headers:", error.response.headers);
+  } else if (error.request) {
+    console.error("No response received:", error.request);
+  } else {
+    console.error("Other error:", error.message);
+  }
+
+  alert(error.response?.data?.error || "Registration failed");
+}
+
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -51,7 +80,7 @@ export const HomePage = () => {
               setUserName={setUserName}
               password={password}
               setPassword={setPassword}
-              handleRegister={handleRegister}
+              handleRegister={handleRegister} // ✅ use local one
               switchToLogin={() => setMode("login")}
             />
           )

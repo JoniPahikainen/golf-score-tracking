@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../firebase";
-import { Round } from "../models/round"; // Assuming you have a Round type defined in types/round.ts
+import { Round } from "../models/round";
 
 const router = Router();
 
