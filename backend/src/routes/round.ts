@@ -17,7 +17,7 @@ router.get("/:userId", async (req: Request, res: Response) => {
 
     const rounds: Round[] = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data() as Omit<Round, "id"> // Exclude id from the Round type
+      ...doc.data() as Omit<Round, "id">
     }));
 
     res.json(rounds);
