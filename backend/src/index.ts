@@ -1,5 +1,7 @@
 import express from 'express';
-import profileRoutes from './routes/user'; // Adjust path as needed
+import profileRoutes from './routes/user';
+import courses from './routes/course';
+import rounds from './routes/round';
 import cors from "cors";
 
 const app = express();
@@ -11,6 +13,9 @@ app.use(express.json());
 
 // Routes
 app.use('/api/profiles', profileRoutes);
+app.use('/api/courses', courses);
+app.use('/api/rounds', rounds);
+
 
 // Basic health check
 app.get('/', (req, res) => {
