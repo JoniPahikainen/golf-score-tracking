@@ -5,7 +5,7 @@ import { RegisterForm } from "@/pages/RegisterForm";
 import { MainAppTabs } from "@/components/app/MainAppTabs";
 import { useState } from "react";
 import { BasicPlayer } from "@/pages/StartRoundPage";
-import api from "@/api/axios"; // ✅ NEW
+import api from "@/api/axios";
 
 export const HomePage = () => {
   const {
@@ -37,15 +37,10 @@ export const HomePage = () => {
     } catch (error: any) {
   console.error("Register error:", error);
 
-  // Log more detail if it's an Axios error
   if (error.response) {
     console.error("Response data:", error.response.data);
-    console.error("Status:", error.response.status);
-    console.error("Headers:", error.response.headers);
-  } else if (error.request) {
-    console.error("No response received:", error.request);
-  } else {
-    console.error("Other error:", error.message);
+    console.error("Response status:", error.response.status);
+    console.error("Response headers:", error.response.headers);
   }
 
   alert(error.response?.data?.error || "Registration failed");
@@ -80,7 +75,7 @@ export const HomePage = () => {
               setUserName={setUserName}
               password={password}
               setPassword={setPassword}
-              handleRegister={handleRegister} // ✅ use local one
+              handleRegister={handleRegister}
               switchToLogin={() => setMode("login")}
             />
           )
