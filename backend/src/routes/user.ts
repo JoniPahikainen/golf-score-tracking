@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { db } from "../db";
+import { generateToken } from "../utils/jwt";
 
 const router = Router();
 
@@ -65,13 +66,30 @@ router.delete("/:userId", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { userName, password } = req.body;
-    if (!userName || !password) return res.status(400).json({ error: "Missing username or password" });
+    if (!userName || !password)
+      return res.status(400).json({ error: "Missing username or password" });
+
     const user = await db.getUserByUsername(userName);
-    if (!user || !user.password) return res.status(401).json({ error: "Invalid username or password" });
+    if (!user || !user.password)
+      return res.status(401).json({ error: "Invalid username or password" });
+
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Invalid username or password" });
+    if (!isMatch)
+      return res.status(401).json({ error: "Invalid username or password" });
+
+    const token = generateToken({
+      id: user.id,
+      userName: user.userName,
+    });
+
     const { password: _, ...userData } = user;
-    res.json({ message: "Login successful", userId: user.id, ...userData });
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: userData,
+    });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Internal server error" });
