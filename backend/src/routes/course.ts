@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createCourse, deleteCourse } from "../db/firestore";
+import { createCourse, deleteCourse, getAllCourses } from "../db/firestore";
 import { Course } from "../db/types";
 
 const router = Router();
@@ -53,6 +53,16 @@ router.delete("/:courseId", async (req, res) => {
     const deleted = await deleteCourse(req.params.courseId);
     if (!deleted) return res.status(404).json({ error: "Course not found" });
     res.json({ message: "Course deleted successfully" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/", async (req, res) => {
+  try {
+    const courses = await getAllCourses();
+    res.json(courses);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Internal server error" });

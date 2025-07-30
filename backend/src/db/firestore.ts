@@ -81,3 +81,8 @@ export async function deleteCourse(id: string): Promise<boolean> {
   await ref.delete();
   return true;
 }
+
+export async function getAllCourses(): Promise<Course[]> {
+  const snap = await collectionCourses.get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Course, "id">) }));
+}
