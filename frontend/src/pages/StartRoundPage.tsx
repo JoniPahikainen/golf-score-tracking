@@ -17,6 +17,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { useEffect } from "react";
+import api from "@/api/axios";
 
 export interface BasicPlayer {
   id: string;
@@ -42,11 +44,10 @@ interface StartRoundProps {
     date: Date;
     title?: string;
   }) => void;
-  courses: Course[];
   tees: Tee[];
 }
 
-export const StartRound = ({ onStart, courses, tees }: StartRoundProps) => {
+export const StartRound = ({ onStart, tees }: StartRoundProps) => {
   const [players, setPlayers] = useState<BasicPlayer[]>([
     { id: "1", name: "You" },
   ]);
@@ -55,6 +56,23 @@ export const StartRound = ({ onStart, courses, tees }: StartRoundProps) => {
   const [selectedTee, setSelectedTee] = useState<string>("");
   const [roundDate, setRoundDate] = useState<Date>(new Date());
   const [roundTitle, setRoundTitle] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await api.get("/courses");
+        setCourses(response.data);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   const addPlayer = () => {
     if (!newName.trim()) return;
@@ -99,12 +117,24 @@ export const StartRound = ({ onStart, courses, tees }: StartRoundProps) => {
       {/* Course Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-white">Course</label>
-        <Select onValueChange={setSelectedCourse} value={selectedCourse}>
+        <Select
+          onValueChange={setSelectedCourse}
+          value={selectedCourse}
+          disabled={isLoadingCourses}
+        >
           <SelectTrigger className="bg-slate-800 text-white">
-            <SelectValue placeholder="Select a course" />
+            <SelectValue
+              placeholder={
+                isLoadingCourses ? "Loading courses..." : "Select a course"
+              }
+            />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 text-white">
-            {Array.isArray(courses) && courses.length > 0 ? (
+            {isLoadingCourses ? (
+              <SelectItem disabled value="loading">
+                Loading...
+              </SelectItem>
+            ) : courses.length > 0 ? (
               courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.name}
