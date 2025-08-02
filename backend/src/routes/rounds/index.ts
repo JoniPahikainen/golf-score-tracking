@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createRound, updateRound, deleteRound, getRoundsByUserId } from "../db/firestore";
-import { Round } from "../db/types";
+import { createRound, updateRound, deleteRound, getRoundsByUserId } from "../../db/firestore";
+import { Round } from "../../db/types";
 
 const router = Router();
 

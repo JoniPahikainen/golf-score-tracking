@@ -42,6 +42,26 @@ export async function deleteUser(id: string): Promise<boolean> {
   await ref.delete();
   return true;
 }
+export async function deleteUserByUsername(username: string): Promise<boolean> {
+  try {
+    // Firestore implementation example
+    const usersRef = collectionUsers;
+    const querySnapshot = await usersRef.where('userName', '==', username).get();
+
+    if (querySnapshot.empty) {
+      return false;
+    }
+
+    // Since usernames should be unique, we'll just delete the first match
+    const userDoc = querySnapshot.docs[0];
+    await userDoc.ref.delete();
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return false;
+  }
+}
 
 export async function createRound(round: Omit<Round, "id">): Promise<string> {
   const ref = await collectionRounds.add(round);

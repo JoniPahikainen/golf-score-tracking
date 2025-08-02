@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createCourse, deleteCourse, getAllCourses } from "../db/firestore";
-import { Course } from "../db/types";
+import { createCourse, deleteCourse, getAllCourses } from "../../db/firestore";
+import { Course } from "../../db/types";
 
 const router = Router();
 
@@ -22,10 +22,8 @@ function validateCourseInput(body: any): { valid: boolean; message?: string } {
       }
     }
   }
-
   return { valid: true };
 }
-
 
 router.post("/", async (req, res) => {
   try {
