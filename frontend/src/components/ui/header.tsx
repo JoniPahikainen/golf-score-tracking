@@ -1,25 +1,24 @@
-import { User, ChevronDown, LogOut, Settings, Trophy } from "lucide-react";
+// components/ui/header.tsx
+import { User, LogOut, Settings, Trophy } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
-  isLoggedIn: boolean;
-  isProfileOpen: boolean;
-  setIsProfileOpen: (open: boolean) => void;
-  setActiveTab: (tab: string) => void;
   handleLogout: () => void;
 }
 
-export const Header = ({
-  isLoggedIn,
-  isProfileOpen,
-  setIsProfileOpen,
-  setActiveTab,
-  handleLogout,
-}: HeaderProps) => {
+export const Header = ({ handleLogout }: HeaderProps) => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+
   return (
     <header className="bg-blue-800 text-white shadow-lg">
       <div className="flex items-center justify-between container mx-auto px-4 py-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 
+            className="text-3xl font-bold flex items-center gap-2 cursor-pointer hover:text-blue-300 transition-colors"
+            onClick={() => navigate("/app")}
+          >
             <Trophy className="h-8 w-8 text-blue-300" />
             Golf Score Tracker
           </h1>
@@ -28,7 +27,17 @@ export const Header = ({
           </p>
         </div>
 
-        {isLoggedIn && (
+        <div className="flex items-center gap-6">
+          {/* New Start Round Button REMOVE WHEN FOUND BETTER OPTION*/}
+          <button
+            onClick={() => navigate("/app/start-round")}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 rounded-lg px-4 py-2 transition-colors"
+          >
+            <span className="hidden md:inline">Start Round</span>
+          </button>
+          {/* REMOVE WHEN FOUND BETTER OPTION */}
+
+          {/* Existing Profile Button */}
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -45,7 +54,7 @@ export const Header = ({
                   <button
                     className="flex items-center w-full px-4 py-2 text-left hover:bg-slate-700 gap-2"
                     onClick={() => {
-                      setActiveTab("profile");
+                      navigate("/app/user-profile");
                       setIsProfileOpen(false);
                     }}
                   >
@@ -70,7 +79,7 @@ export const Header = ({
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </header>
   );

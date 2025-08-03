@@ -36,7 +36,7 @@ router.delete("/:userId", async (req, res) => {
   }
 });
 
-router.delete("/:username", async (req, res) => {
+router.delete("/username/:username", async (req, res) => {
     try {
         const deleted = await db.deleteUserByUsername(req.params.username);
         if (!deleted) return res.status(404).json({ error: "User not found" });

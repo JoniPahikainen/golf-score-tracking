@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Target, Eye } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface Round {
   id: string;
@@ -19,7 +20,6 @@ interface Round {
 }
 
 export const RoundHistory = () => {
-  // Mock data - replace with actual API call
   const [rounds] = useState<Round[]>([
     {
       id: "1",
@@ -55,6 +55,7 @@ export const RoundHistory = () => {
       })),
     },
   ]);
+  const navigate = useNavigate();
 
   const getScoreBadgeColor = (score: number) => {
     if (score < 80) return "bg-green-500";
