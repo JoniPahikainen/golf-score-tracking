@@ -44,7 +44,6 @@ export async function deleteUser(id: string): Promise<boolean> {
 }
 export async function deleteUserByUsername(username: string): Promise<boolean> {
   try {
-    // Firestore implementation example
     const usersRef = collectionUsers;
     const querySnapshot = await usersRef.where('userName', '==', username).get();
 
@@ -52,7 +51,6 @@ export async function deleteUserByUsername(username: string): Promise<boolean> {
       return false;
     }
 
-    // Since usernames should be unique, we'll just delete the first match
     const userDoc = querySnapshot.docs[0];
     await userDoc.ref.delete();
     
