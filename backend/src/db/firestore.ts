@@ -104,3 +104,9 @@ export async function getAllCourses(): Promise<Course[]> {
   const snap = await collectionCourses.get();
   return snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Course, "id">) }));
 }
+
+export async function getCourseById(id: string): Promise<Course | null> {
+  const doc = await collectionCourses.doc(id).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...(doc.data() as Omit<Course, "id">) };
+}

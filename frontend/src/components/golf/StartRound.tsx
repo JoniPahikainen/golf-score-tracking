@@ -16,7 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import api from "@/api/axios";
 
 export interface BasicPlayer {
   id: string;
@@ -43,9 +42,11 @@ interface StartRoundProps {
     title?: string;
   }) => void;
   tees: Tee[];
+  courses: Course[];
+  onCourseSelect: (courseId: string) => void;
 }
 
-export const StartRound = ({ onStart, tees }: StartRoundProps) => {
+export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoundProps) => {
   const [players, setPlayers] = useState<BasicPlayer[]>([
     { id: "1", name: "You" },
   ]);
@@ -54,23 +55,17 @@ export const StartRound = ({ onStart, tees }: StartRoundProps) => {
   const [selectedTee, setSelectedTee] = useState<string>("");
   const [roundDate, setRoundDate] = useState<Date>(new Date());
   const [roundTitle, setRoundTitle] = useState("");
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isLoadingTees, setIsLoadingTees] = useState(false);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await api.get("/courses");
-        setCourses(response.data);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setIsLoadingCourses(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
+  const handleCourseChange = (courseId: string) => {
+    setSelectedCourse(courseId);
+    setSelectedTee("");
+    if (courseId) {
+      setIsLoadingTees(true);
+      onCourseSelect(courseId);
+      setIsLoadingTees(false);
+    }
+  };
 
   const addPlayer = () => {
     if (!newName.trim()) return;
@@ -82,7 +77,7 @@ export const StartRound = ({ onStart, tees }: StartRoundProps) => {
   };
 
   const filteredTees = selectedCourse
-    ? tees?.filter((tee) => tee.courseId === selectedCourse)
+    ? tees.filter((tee) => tee.courseId === selectedCourse)
     : [];
 
   const handleStart = () => {
@@ -118,15 +113,13 @@ export const StartRound = ({ onStart, tees }: StartRoundProps) => {
         <div className="space-y-2">
           <label className="text-sm font-medium text-white">Course</label>
           <Select
-            onValueChange={setSelectedCourse}
+            onValueChange={handleCourseChange}
             value={selectedCourse}
-            disabled={isLoadingCourses}
+            disabled={courses.length === 0}
           >
             <SelectTrigger className="bg-slate-800 text-white border-slate-700">
               <SelectValue
-                placeholder={
-                  isLoadingCourses ? "Loading courses..." : "Select a course"
-                }
+                placeholder={courses.length ? "Select a course" : "Loading courses..."}
               />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 text-white border-slate-700">
@@ -145,14 +138,16 @@ export const StartRound = ({ onStart, tees }: StartRoundProps) => {
           <Select
             onValueChange={setSelectedTee}
             value={selectedTee}
-            disabled={!selectedCourse}
+            disabled={!selectedCourse || isLoadingTees}
           >
             <SelectTrigger className="bg-slate-800 text-white border-slate-700">
               <SelectValue
                 placeholder={
-                  !selectedCourse
+                  isLoadingTees
+                    ? "Loading tees..."
+                    : !selectedCourse
                     ? "Select a course first"
-                    : filteredTees?.length
+                    : filteredTees.length
                     ? "Select a tee"
                     : "No tees available"
                 }
