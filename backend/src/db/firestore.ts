@@ -110,3 +110,9 @@ export async function getCourseById(id: string): Promise<Course | null> {
   if (!doc.exists) return null;
   return { id: doc.id, ...(doc.data() as Omit<Course, "id">) };
 }
+
+export async function getRoundsById(id: string): Promise<Round | null> {
+  const doc = await collectionRounds.doc(id).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...(doc.data() as Omit<Round, "id">) };
+}
