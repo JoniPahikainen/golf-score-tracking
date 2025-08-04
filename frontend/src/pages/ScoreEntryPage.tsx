@@ -22,20 +22,45 @@ export const ScoreEntryPage = () => {
   useEffect(() => {
     const fetchRoundData = async () => {
       try {
-        // Fetch round data including players
-        const response = await api.get(`/rounds/${roundId}`);
+        const response = await api.get(`/rounds/round/${roundId}`);
         const roundData = response.data;
-        
-        // Initialize players with empty scores if needed
-        const initializedPlayers = roundData.players.map((player: any) => ({
-          ...player,
-          holes: Array.from({ length: 18 }, (_, i) => ({
-            holeNumber: i + 1,
-            strokes: 0,
-            putts: 0,
-          })),
+        const roundPlayers = roundData.players || [];
+
+        const initializedPlayers = roundPlayers.map((player: any) => ({
+          id: player.id || Date.now().toString(),
+          name: player.name || `Player ${Date.now().toString().slice(-4)}`,
+          holes:
+            Array.isArray(player.holes) && player.holes.length > 0
+              ? player.holes.map((hole: any) => ({
+                  holeNumber: hole.holeNumber || 0,
+                  strokes: hole.strokes || 0,
+                  putts: hole.putts || 0,
+                  fairwayHit: hole.fairwayHit,
+                  greenInReg: hole.greenInReg,
+                }))
+              : Array.from({ length: 18 }, (_, i) => ({
+                  holeNumber: i + 1,
+                  strokes: 0,
+                  putts: 0,
+                  fairwayHit: undefined,
+                  greenInReg: undefined,
+                })),
         }));
-        
+
+        if (initializedPlayers.length === 0) {
+          initializedPlayers.push({
+            id: Date.now().toString(),
+            name: "Player 1",
+            holes: Array.from({ length: 18 }, (_, i) => ({
+              holeNumber: i + 1,
+              strokes: 0,
+              putts: 0,
+              fairwayHit: undefined,
+              greenInReg: undefined,
+            })),
+          });
+        }
+
         setPlayers(initializedPlayers);
       } catch (error) {
         console.error("Error fetching round data:", error);
@@ -62,8 +87,8 @@ export const ScoreEntryPage = () => {
   }
 
   return (
-    <ScoreEntry 
-      initialPlayers={players} 
+    <ScoreEntry
+      initialPlayers={players}
       onExit={() => navigate(`/app/round/${roundId}`)}
     />
   );

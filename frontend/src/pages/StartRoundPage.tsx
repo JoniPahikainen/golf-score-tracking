@@ -11,7 +11,6 @@ export const StartRoundPage = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // First fetch all courses
         const coursesResponse = await api.get("/courses");
         setCourses(coursesResponse.data);
       } catch (error) {
@@ -32,13 +31,24 @@ export const StartRoundPage = () => {
   };
 
   const handleStartRound = async (roundData: any) => {
-    try {
-      const response = await api.post("/rounds", roundData);
-      navigate(`/app/score-entry/${response.data.id}`);
-    } catch (error) {
-      console.error("Error starting round:", error);
-    }
-  };
+  try {
+    const response = await api.post("/rounds", {
+      courseId: roundData.courseId,
+      teeId: roundData.teeId,
+      date: roundData.date.toISOString(),
+      title: roundData.title,
+      players: roundData.players.map((p: BasicPlayer) => ({ 
+        id: p.id,
+        name: p.name 
+      }))
+    });
+    
+    console.log("Round started successfully:", response.data);
+    navigate(`/app/score-entry/${response.data.roundId}`);
+  } catch (error) {
+    console.error("Error starting round:", error);
+  }
+};
 
   return (
     <div className="p-4">
@@ -61,4 +71,9 @@ interface Tee {
   id: string;
   name: string;
   courseId: string;
+}
+
+interface BasicPlayer {
+  id: string;
+  name: string;
 }
