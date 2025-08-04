@@ -1,2 +1,3 @@
-import * as firestore from "./firestore";
-export const db = firestore;
+export * from "./repositories";
+export * from "./firestore";
+export * from "./types";

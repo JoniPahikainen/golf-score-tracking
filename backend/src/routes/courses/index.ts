@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createCourse, deleteCourse, getAllCourses, getCourseById } from "../../db/firestore";
+import { createCourse, deleteCourse, getAllCourses, getCourseById } from "../../db";
 import { Course } from "../../db/types";
 
 const router = Router();

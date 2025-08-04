@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createRound, updateRound, deleteRound, getRoundsByUserId, getRoundsById } from "../../db/firestore";
+import { createRound, updateRound, deleteRound, getRoundsByUserId, getRoundById } from "../../db";
 import { Round } from "../../db/types";
 
 const router = Router();
@@ -61,7 +61,7 @@ router.get("/round/:roundId", async (req, res) => {
   try {
     const roundId = req.params.roundId;
     if (!roundId) return res.status(400).json({ error: "Missing round ID" });
-    const round = await getRoundsById(roundId);
+    const round = await getRoundById(roundId);
     if (!round) return res.status(404).json({ error: "Round not found" });
     res.json(round);
   } catch (e) {
