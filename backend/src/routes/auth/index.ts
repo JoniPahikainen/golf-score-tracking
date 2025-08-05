@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { db } from "../../db";
+import { getUserByUsername, createUser, deleteUserByUsername } from "../../db";
 import { generateToken } from "../../utils/jwt";
 
 const router = Router();
@@ -11,7 +11,7 @@ router.post("/login", async (req, res) => {
     if (!userName || !password)
       return res.status(400).json({ error: "Missing username or password" });
 
-    const user = await db.getUserByUsername(userName);
+    const user = await getUserByUsername(userName);
     if (!user || !user.password)
       return res.status(401).json({ error: "Invalid username or password" });
 
@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
     const hashed = await bcrypt.hash(password, 10);
-    const id = await db.createUser({ 
+    const id = await createUser({ 
       userName, 
       password: hashed, 
       createdAt: new Date(), 
@@ -66,12 +66,12 @@ router.delete("/:username", async (req, res) => {
       return res.status(400).json({ error: "Username is required" });
     }
 
-    const user = await db.getUserByUsername(username);
+    const user = await getUserByUsername(username);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const deleted = await db.deleteUserByUsername(username);
+    const deleted = await deleteUserByUsername(username);
     
     if (deleted) {
       res.json({ 

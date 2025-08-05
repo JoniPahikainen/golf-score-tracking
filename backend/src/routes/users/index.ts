@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { db } from "../../db";
+import { getAllUsers, deleteUser, getUserById, deleteUserByUsername } from "../../db";
 
 const router = Router();
 
 router.get("/:userId", async (req, res) => {
   try {
-    const user = await db.getUserById(req.params.userId);
+    const user = await getUserById(req.params.userId);
     if (!user) return res.status(404).json({ error: "User not found" });
     const { password, ...userData } = user;
     res.json(userData);
@@ -17,7 +17,7 @@ router.get("/:userId", async (req, res) => {
 
 router.get("/", async (_req, res) => {
   try {
-    const users = await db.getAllUsers(true);
+    const users = await getAllUsers(true);
     res.json(users);
   } catch (e) {
     console.error(e);
@@ -27,7 +27,7 @@ router.get("/", async (_req, res) => {
 
 router.delete("/:userId", async (req, res) => {
   try {
-    const deleted = await db.deleteUser(req.params.userId);
+    const deleted = await deleteUser(req.params.userId);
     if (!deleted) return res.status(404).json({ error: "User not found" });
     res.json({ message: "User deleted successfully" });
   } catch (e) {
@@ -38,7 +38,7 @@ router.delete("/:userId", async (req, res) => {
 
 router.delete("/username/:username", async (req, res) => {
     try {
-        const deleted = await db.deleteUserByUsername(req.params.username);
+        const deleted = await deleteUserByUsername(req.params.username);
         if (!deleted) return res.status(404).json({ error: "User not found" });
         res.json({ message: "User deleted successfully" });
     } catch (e) {
