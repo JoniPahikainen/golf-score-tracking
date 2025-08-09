@@ -44,6 +44,13 @@ router.post("/register", async (req, res) => {
     if (!userName || !password) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+    
+    // Check if user already exists
+    const existingUser = await getUserByUsername(userName);
+    if (existingUser) {
+      return res.status(409).json({ error: "Username already exists" });
+    }
+    
     const hashed = await bcrypt.hash(password, 10);
     const id = await createUser({ 
       userName, 
@@ -53,8 +60,11 @@ router.post("/register", async (req, res) => {
     });
     res.status(201).json({ message: "User created", userId: id, userName });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Registration error:", e);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: e instanceof Error ? e.message : "Unknown error" 
+    });
   }
 });
 

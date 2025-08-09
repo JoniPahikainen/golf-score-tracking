@@ -18,8 +18,15 @@ export const useAuth = () => {
   const handleApiError = (error: any): ApiError => {
     console.error("API Error:", error);
     if (error.response) {
+      // Try different possible error message fields from backend
+      const errorMessage = 
+        error.response.data?.error || 
+        error.response.data?.message || 
+        error.response.data?.details ||
+        `Request failed with status ${error.response.status}`;
+      
       return {
-        message: error.response.data?.message || "Request failed",
+        message: errorMessage,
         status: error.response.status,
         data: error.response.data
       };
@@ -45,12 +52,6 @@ export const useAuth = () => {
     } catch (error: any) {
       const apiError = handleApiError(error);
       setError(apiError);
-      
-      if (apiError.status === 400) {
-        setError({
-          message: apiError.data?.error || "Invalid username or password"
-        });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -62,19 +63,13 @@ export const useAuth = () => {
 
     try {
       const response = await api.post("/auth/register", {
-        username,
+        userName: username,
         password
       });
       navigate("/login");
     } catch (error: any) {
       const apiError = handleApiError(error);
       setError(apiError);
-
-      if (apiError.status === 404) {
-        setError({
-          message: "Registration endpoint not found. Check API URL."
-        });
-      }
     } finally {
       setIsLoading(false);
     }
