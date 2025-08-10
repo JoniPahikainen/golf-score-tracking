@@ -1,210 +1,316 @@
 import { supabase } from "../supabase";
-import { Round } from "../types";
+import {
+  Round,
+  CreateRoundRequest,
+  DatabaseError,
+  ScoreUpdateData,
+} from "../types";
 
-export const createRound = async (round: Omit<Round, "id">): Promise<string> => {
-  // Create the round first
-  const { data: roundData, error: roundError } = await supabase
-    .from('rounds')
-    .insert([{
-      course_id: round.courseId,
-      date: round.date,
-      tee_id: round.teeId,
-      title: round.title,
-      created_at: round.createdAt || new Date(),
-      updated_at: round.updatedAt || new Date()
-    }])
-    .select('id')
-    .single();
-
-  if (roundError) {
-    throw new Error(`Failed to create round: ${roundError.message}`);
-  }
-
-  const roundId = roundData.id;
-
-  // Create players for this round
-  for (const player of round.players) {
-    const { data: playerData, error: playerError } = await supabase
-      .from('round_players')
-      .insert([{
-        round_id: roundId,
-        user_id: player.userId,
-        hcp_at_time: player.hcpAtTime,
-        total_score: player.totalScore
-      }])
-      .select('id')
-      .single();
-
-    if (playerError) {
-      throw new Error(`Failed to create player for round: ${playerError.message}`);
-    }
-
-    const roundPlayerId = playerData.id;
-
-    // Create scores for this player
-    if (player.scores && player.scores.length > 0) {
-      const scoresData = player.scores.map(score => ({
-        round_player_id: roundPlayerId,
-        hole_number: score.holeNumber,
-        strokes: score.strokes,
-        putts: score.putts,
-        fairway_hit: score.fairwayHit || false,
-        green_in_reg: score.greenInReg || false,
-        penalties: score.penalties || 0
-      }));
-
-      const { error: scoresError } = await supabase
-        .from('player_scores')
-        .insert(scoresData);
-
-      if (scoresError) {
-        throw new Error(`Failed to create scores for player: ${scoresError.message}`);
-      }
-    }
-  }
-
-  return roundId;
+const handleSupabaseError = (error: any, context: string): DatabaseError => {
+  const dbError = new Error(`${context}: ${error.message}`) as DatabaseError;
+  dbError.code = error.code;
+  dbError.detail = error.details;
+  return dbError;
 };
 
-export const updateRound = async (id: string, updates: Partial<Round>): Promise<boolean> => {
-  // Only update basic round fields, not nested data
-  const roundUpdates: any = {};
-  
-  if (updates.courseId) roundUpdates.course_id = updates.courseId;
-  if (updates.date) roundUpdates.date = updates.date;
-  if (updates.teeId) roundUpdates.tee_id = updates.teeId;
-  if (updates.title !== undefined) roundUpdates.title = updates.title;
-  
-  roundUpdates.updated_at = new Date();
+const ROUND_SELECT_FIELDS = `
+  *,
+  round_players (
+    id,
+    user_id,
+    handicap_at_time,
+    total_score,
+    total_putts,
+    fairways_hit,
+    greens_in_regulation,
+    total_penalties,
+    player_scores (
+      hole_number,
+      strokes,
+      putts,
+      fairway_hit,
+      green_in_regulation,
+      penalties,
+      driving_distance,
+      notes
+    )
+  )
+`;
 
-  const { error } = await supabase
-    .from('rounds')
-    .update(roundUpdates)
-    .eq('id', id);
+const transformRoundData = (roundData: any): Round => ({
+  id: roundData.id,
+  courseId: roundData.course_id,
+  date: new Date(roundData.date),
+  teeName: roundData.tee_name,
+  title: roundData.title,
+  weather: roundData.weather,
+  temperature: roundData.temperature,
+  notes: roundData.notes,
+  status: roundData.status,
+  isTournament: roundData.is_tournament,
+  tournamentName: roundData.tournament_name,
+  createdBy: roundData.created_by,
+  players: (roundData.round_players || []).map((player: any) => ({
+    id: player.id,
+    userId: player.user_id,
+    handicapAtTime: player.handicap_at_time,
+    totalScore: player.total_score,
+    totalPutts: player.total_putts,
+    fairwaysHit: player.fairways_hit,
+    greensInRegulation: player.greens_in_regulation,
+    totalPenalties: player.total_penalties,
+    scores: (player.player_scores || [])
+      .sort((a: any, b: any) => a.hole_number - b.hole_number)
+      .map((score: any) => ({
+        holeNumber: score.hole_number,
+        strokes: score.strokes,
+        putts: score.putts,
+        fairwayHit: score.fairway_hit,
+        greenInRegulation: score.green_in_regulation,
+        penalties: score.penalties,
+        drivingDistance: score.driving_distance,
+        notes: score.notes,
+      })),
+  })),
+  createdAt: new Date(roundData.created_at),
+  updatedAt: new Date(roundData.updated_at),
+});
 
-  if (error) {
-    throw new Error(`Failed to update round: ${error.message}`);
+const createInitialScores = async (roundPlayerId: string) => {
+  const initialScores = Array.from({ length: 18 }, (_, i) => ({
+    round_player_id: roundPlayerId,
+    hole_number: i + 1,
+    strokes: 0,
+    putts: 0,
+    fairway_hit: false,
+    green_in_regulation: false,
+    penalties: 0,
+  }));
+
+  const { error } = await supabase.from("player_scores").insert(initialScores);
+
+  if (error)
+    throw handleSupabaseError(error, "Failed to create initial scores");
+};
+
+const recalculatePlayerTotals = async (roundPlayerId: string) => {
+  const { data: scores, error: scoresError } = await supabase
+    .from("player_scores")
+    .select("*")
+    .eq("round_player_id", roundPlayerId);
+
+  if (scoresError)
+    throw handleSupabaseError(scoresError, "Failed to get scores");
+
+  const totals = {
+    totalScore: scores.reduce((sum, score) => sum + (score.strokes || 0), 0),
+    totalPutts: scores.reduce((sum, score) => sum + (score.putts || 0), 0),
+    fairwaysHit: scores.filter((score) => score.fairway_hit).length,
+    greensInRegulation: scores.filter((score) => score.green_in_regulation)
+      .length,
+    totalPenalties: scores.reduce(
+      (sum, score) => sum + (score.penalties || 0),
+      0
+    ),
+  };
+
+  const { error: updateError } = await supabase
+    .from("round_players")
+    .update({
+      total_score: totals.totalScore,
+      total_putts: totals.totalPutts,
+      fairways_hit: totals.fairwaysHit,
+      greens_in_regulation: totals.greensInRegulation,
+      total_penalties: totals.totalPenalties,
+      updated_at: new Date(),
+    })
+    .eq("id", roundPlayerId);
+
+  if (updateError)
+    throw handleSupabaseError(updateError, "Failed to update player totals");
+};
+
+export const createRound = async (
+  round: CreateRoundRequest
+): Promise<string> => {
+  try {
+    const { data: roundData, error: roundError } = await supabase
+      .from("rounds")
+      .insert({
+        course_id: round.courseId,
+        date: new Date(round.date),
+        tee_name: round.teeName,
+        title: round.title,
+        weather: round.weather,
+        temperature: round.temperature,
+        notes: round.notes,
+        status: "active",
+        is_tournament: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+      .select("id")
+      .single();
+
+    if (roundError)
+      throw handleSupabaseError(roundError, "Failed to create round");
+
+    await Promise.all(
+      round.players.map(async (player) => {
+        const { data: playerData, error: playerError } = await supabase
+          .from("round_players")
+          .insert({
+            round_id: roundData.id,
+            user_id: player.userId,
+            handicap_at_time: player.handicapAtTime || 0,
+            total_score: 0,
+            total_putts: 0,
+            fairways_hit: 0,
+            greens_in_regulation: 0,
+            total_penalties: 0,
+          })
+          .select("id")
+          .single();
+
+        if (playerError)
+          throw handleSupabaseError(playerError, "Failed to create player");
+
+        await createInitialScores(playerData.id);
+      })
+    );
+
+    return roundData.id;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error creating round");
   }
+};
 
-  return true;
+export const updateScore = async (
+  roundId: string,
+  userId: string,
+  holeNumber: number,
+  scoreData: ScoreUpdateData
+): Promise<boolean> => {
+  try {
+    const { data: roundPlayer, error: playerError } = await supabase
+      .from("round_players")
+      .select("id")
+      .eq("round_id", roundId)
+      .eq("user_id", userId)
+      .single();
+
+    if (playerError || !roundPlayer) throw new Error("Round player not found");
+
+    const { error: scoreError } = await supabase
+      .from("player_scores")
+      .update({
+        strokes: scoreData.strokes,
+        putts: scoreData.putts ?? 0,
+        fairway_hit: scoreData.fairwayHit ?? false,
+        green_in_regulation: scoreData.greenInRegulation ?? false,
+        penalties: scoreData.penalties ?? 0,
+        driving_distance: scoreData.drivingDistance,
+        notes: scoreData.notes,
+        updated_at: new Date(),
+      })
+      .eq("round_player_id", roundPlayer.id)
+      .eq("hole_number", holeNumber);
+
+    if (scoreError)
+      throw handleSupabaseError(scoreError, "Failed to update score");
+
+    await recalculatePlayerTotals(roundPlayer.id);
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error updating score");
+  }
+};
+
+export const updateRound = async (
+  id: string,
+  updates: Partial<Round>
+): Promise<boolean> => {
+  try {
+    const updateData: Record<string, any> = {
+      updated_at: new Date(),
+    };
+
+    if (updates.courseId !== undefined) updateData.course_id = updates.courseId;
+    if (updates.date !== undefined) updateData.date = updates.date;
+    if (updates.teeName !== undefined) updateData.tee_name = updates.teeName;
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.weather !== undefined) updateData.weather = updates.weather;
+    if (updates.temperature !== undefined)
+      updateData.temperature = updates.temperature;
+    if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.status !== undefined) updateData.status = updates.status;
+
+    const { error } = await supabase
+      .from("rounds")
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) throw handleSupabaseError(error, "Failed to update round");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error updating round");
+  }
 };
 
 export const deleteRound = async (id: string): Promise<boolean> => {
-  const { error } = await supabase
-    .from('rounds')
-    .delete()
-    .eq('id', id);
+  try {
+    const { error } = await supabase.from("rounds").delete().eq("id", id);
 
-  if (error) {
-    throw new Error(`Failed to delete round: ${error.message}`);
+    if (error) throw handleSupabaseError(error, "Failed to delete round");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error deleting round");
   }
-
-  return true;
 };
 
-export const getRoundsByUserId = async (userId: string): Promise<Round[]> => {
-  const { data: roundsData, error: roundsError } = await supabase
-    .from('rounds')
-    .select(`
-      *,
-      round_players!inner (
-        id,
-        user_id,
-        hcp_at_time,
-        total_score,
-        player_scores (
-          hole_number,
-          strokes,
-          putts,
-          fairway_hit,
-          green_in_reg,
-          penalties
-        )
-      )
-    `)
-    .eq('round_players.user_id', userId)
-    .order('date', { ascending: false });
+export const getRoundsByUserId = async (
+  userId: string,
+  limit?: number
+): Promise<Round[]> => {
+  try {
+    let query = supabase
+      .from("rounds")
+      .select(ROUND_SELECT_FIELDS)
+      .eq("round_players.user_id", userId)
+      .order("date", { ascending: false });
 
-  if (roundsError) {
-    throw new Error(`Failed to get rounds: ${roundsError.message}`);
+    if (limit) query = query.limit(limit);
+
+    const { data, error } = await query;
+    if (error) throw handleSupabaseError(error, "Failed to get rounds");
+
+    return data?.map(transformRoundData) || [];
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error getting rounds by user");
   }
-
-  return roundsData.map(round => ({
-    id: round.id,
-    courseId: round.course_id,
-    date: new Date(round.date),
-    teeId: round.tee_id,
-    title: round.title,
-    players: round.round_players.map((player: any) => ({
-      userId: player.user_id,
-      hcpAtTime: player.hcp_at_time,
-      totalScore: player.total_score,
-      scores: player.player_scores
-        .sort((a: any, b: any) => a.hole_number - b.hole_number)
-        .map((score: any) => ({
-          holeNumber: score.hole_number,
-          strokes: score.strokes,
-          putts: score.putts,
-          fairwayHit: score.fairway_hit,
-          greenInReg: score.green_in_reg,
-          penalties: score.penalties
-        }))
-    })),
-    createdAt: new Date(round.created_at),
-    updatedAt: new Date(round.updated_at)
-  }));
 };
 
 export const getRoundById = async (id: string): Promise<Round | null> => {
-  const { data: roundData, error: roundError } = await supabase
-    .from('rounds')
-    .select(`
-      *,
-      round_players (
-        id,
-        user_id,
-        hcp_at_time,
-        total_score,
-        player_scores (
-          hole_number,
-          strokes,
-          putts,
-          fairway_hit,
-          green_in_reg,
-          penalties
-        )
-      )
-    `)
-    .eq('id', id)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("rounds")
+      .select(ROUND_SELECT_FIELDS)
+      .eq("id", id)
+      .single();
 
-  if (roundError) {
-    if (roundError.code === 'PGRST116') return null; // No rows found
-    throw new Error(`Failed to get round: ${roundError.message}`);
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw handleSupabaseError(error, "Failed to get round");
+    }
+
+    return transformRoundData(data);
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error getting round by ID");
   }
-
-  return {
-    id: roundData.id,
-    courseId: roundData.course_id,
-    date: new Date(roundData.date),
-    teeId: roundData.tee_id,
-    title: roundData.title,
-    players: roundData.round_players.map((player: any) => ({
-      userId: player.user_id,
-      hcpAtTime: player.hcp_at_time,
-      totalScore: player.total_score,
-      scores: player.player_scores
-        .sort((a: any, b: any) => a.hole_number - b.hole_number)
-        .map((score: any) => ({
-          holeNumber: score.hole_number,
-          strokes: score.strokes,
-          putts: score.putts,
-          fairwayHit: score.fairway_hit,
-          greenInReg: score.green_in_reg,
-          penalties: score.penalties
-        }))
-    })),
-    createdAt: new Date(roundData.created_at),
-    updatedAt: new Date(roundData.updated_at)
-  };
 };
