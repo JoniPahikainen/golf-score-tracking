@@ -7,17 +7,35 @@ const router = Router();
 
 router.post("/login", async (req, res) => {
   try {
+    console.log("Login attempt - Request body:", req.body); // Debug: Log incoming request
+    
     const { userName, password } = req.body;
-    if (!userName || !password)
+    if (!userName || !password) {
+      console.log("Login failed - Missing credentials:", { userName, password }); // Debug
       return res.status(400).json({ error: "Missing username or password" });
+    }
 
-    const user = await getUserByUsername(userName);
-    if (!user || !user.password)
+    console.log("Looking for user:", userName); // Debug
+    const user = await getUserByUsername(userName, true);
+    
+    if (!user) {
+      console.log("User not found:", userName); // Debug
       return res.status(401).json({ error: "Invalid username or password" });
+    }
+    
+    if (!user.password) {
+      console.log("User has no password set:", userName); // Debug
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
 
+    console.log("Comparing passwords..."); // Debug
+    console.log("Password:", password);
+    console.log("User password:", user.password);
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
+      console.log("Password mismatch for user:", userName); // Debug
       return res.status(401).json({ error: "Invalid username or password" });
+    }
 
     const token = generateToken({
       id: user.id,
@@ -26,6 +44,7 @@ router.post("/login", async (req, res) => {
 
     const { password: _, ...userData } = user;
 
+    console.log("Login successful for user:", userName); // Debug
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -33,31 +52,40 @@ router.post("/login", async (req, res) => {
       user: userData,
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Login error:", e);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: e instanceof Error ? e.message : "Unknown error" 
+    });
   }
 });
 
 router.post("/register", async (req, res) => {
   try {
+    console.log("Registration attempt - Request body:", req.body); // Debug
+    
     const { userName, password } = req.body;
     if (!userName || !password) {
+      console.log("Registration failed - Missing fields:", { userName, password }); // Debug
       return res.status(400).json({ error: "Missing required fields" });
     }
     
-    // Check if user already exists
+    console.log("Checking if user exists:", userName); // Debug
     const existingUser = await getUserByUsername(userName);
     if (existingUser) {
+      console.log("Username already exists:", userName); // Debug
       return res.status(409).json({ error: "Username already exists" });
     }
     
+    console.log("Hashing password..."); // Debug
     const hashed = await bcrypt.hash(password, 10);
+    console.log("Creating user..."); // Debug
     const id = await createUser({ 
       userName, 
-      password: hashed, 
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      password: hashed
     });
+    
+    console.log("User created successfully:", { id, userName, hashed }); // Debug
     res.status(201).json({ message: "User created", userId: id, userName });
   } catch (e) {
     console.error("Registration error:", e);
