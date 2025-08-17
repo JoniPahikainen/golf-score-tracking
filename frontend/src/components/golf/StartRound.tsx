@@ -41,9 +41,15 @@ interface StartRoundProps {
     date: Date;
     title?: string;
   }) => void;
-  tees: Tee[];
+  tees: {
+    id: string;
+    name: string;
+    color?: string;
+    courseId: string;
+  }[];
   courses: Course[];
   onCourseSelect: (courseId: string) => void;
+  isLoadingTees: boolean;
 }
 
 export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoundProps) => {
@@ -119,11 +125,11 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
           >
             <SelectTrigger className="bg-slate-800 text-white border-slate-700">
               <SelectValue
-                placeholder={courses.length ? "Select a course" : "Loading courses..."}
+                placeholder={Array.isArray(courses) && courses.length ? "Select a course" : "Loading courses..."}
               />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 text-white border-slate-700">
-              {courses.map((course) => (
+              {Array.isArray(courses) && courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.name}
                 </SelectItem>

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createCourse, deleteCourse, getAllCourses, getCourseById, updateCourse } from "../../db";
-import { CreateCourseRequest, ApiResponse } from "../../db/types";
+import { CreateCourseRequest, ApiResponse, TeeColor } from "../../db/types";
 
 const router = Router();
 
@@ -117,24 +117,43 @@ router.get("/:courseId/tees", async (req, res) => {
       } as ApiResponse<never>);
     }
 
-    // Extract all unique tees from the course
-    const tees = (course.holes || []).flatMap(hole => 
-      (hole.tees || []).map(tee => ({
-        id: tee.id,
-        name: tee.teeName,
-        courseId: courseId,
-        holeId: tee.holeId,
-        color: tee.teeColor,
-        length: tee.length,
-        courseRating: tee.courseRating,
-        slopeRating: tee.slopeRating
-      }))
-    );
+    const teeSets = new Map<string, {
+      id: string;
+      name: string;
+      courseId: string;
+      color?: TeeColor;
+      holes: {
+        holeNumber: number;
+        length: number;
+        par: number;
+      }[];
+    }>();
+
+    (course.holes || []).forEach(hole => {
+      (hole.tees || []).forEach(tee => {
+        if (!teeSets.has(tee.teeName)) {
+          teeSets.set(tee.teeName, {
+            id: `${courseId}-${tee.teeName.toLowerCase()}`,
+            name: tee.teeName,
+            courseId,
+            color: tee.teeColor,
+            holes: []
+          });
+        }
+        teeSets.get(tee.teeName)?.holes.push({
+          holeNumber: hole.holeNumber,
+          length: tee.length,
+          par: hole.par
+        });
+      });
+    });
+
+    const result = Array.from(teeSets.values());
 
     res.json({ 
       success: true,
-      data: tees 
-    } as ApiResponse<typeof tees>);
+      data: result 
+    } as ApiResponse<typeof result>);
   } catch (e) {
     console.error("Error getting course tees:", e);
     res.status(500).json({ 
