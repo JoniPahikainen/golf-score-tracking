@@ -153,11 +153,26 @@ export const createCourse = async (
   }
 };
 
-export const deleteCourse = async (id: string): Promise<boolean> => {
+export const deleteCourseSoft = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from("courses")
       .update({ is_active: false, updated_at: new Date() })
+      .eq("id", id);
+
+    if (error) throw handleSupabaseError(error, "Failed to delete course");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while deleting course");
+  }
+};
+
+export const deleteCourse = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("courses")
+      .delete()
       .eq("id", id);
 
     if (error) throw handleSupabaseError(error, "Failed to delete course");

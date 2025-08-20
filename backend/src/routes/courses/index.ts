@@ -1,47 +1,9 @@
 import { Router } from "express";
 import { createCourse, deleteCourse, getAllCourses, getCourseById, updateCourse } from "../../db";
-import { CreateCourseRequest, ApiResponse, TeeColor } from "../../db/types";
+import { CreateCourseRequest, ApiResponse } from "../../db/types";
+import { transformHolesToTeeSets, validateCourseInput } from "../../utils/courseUtils";
 
 const router = Router();
-
-function validateCourseInput(body: any): { valid: boolean; message?: string } {
-  if (!body.name || body.name.trim().length < 2) {
-    return { valid: false, message: "Course name must be at least 2 characters" };
-  }
-  
-  if (!Array.isArray(body.holes) || body.holes.length === 0) {
-    return { valid: false, message: "Course must have at least one hole" };
-  }
-
-  if (body.holes.length !== 9 && body.holes.length !== 18) {
-    return { valid: false, message: "Course must have exactly 9 or 18 holes" };
-  }
-
-  for (const hole of body.holes) {
-    if (typeof hole.holeNumber !== "number" || hole.holeNumber < 1 || hole.holeNumber > 18) {
-      return { valid: false, message: "Each hole must have a valid holeNumber (1-18)" };
-    }
-    
-    if (typeof hole.par !== "number" || hole.par < 3 || hole.par > 6) {
-      return { valid: false, message: `Hole ${hole.holeNumber} must have par between 3 and 6` };
-    }
-    
-    if (!Array.isArray(hole.tees) || hole.tees.length === 0) {
-      return { valid: false, message: `Hole ${hole.holeNumber} must have at least one tee` };
-    }
-    
-    for (const tee of hole.tees) {
-      if (!tee.teeName || tee.teeName.trim().length === 0) {
-        return { valid: false, message: `Tee in hole ${hole.holeNumber} must have a name` };
-      }
-      
-      if (typeof tee.length !== "number" || tee.length < 50 || tee.length > 700) {
-        return { valid: false, message: `Tee length in hole ${hole.holeNumber} must be between 50 and 700 yards` };
-      }
-    }
-  }
-  return { valid: true };
-}
 
 // Get all courses
 router.get("/", async (req, res) => {
@@ -100,15 +62,16 @@ router.get("/:courseId", async (req, res) => {
 
 // Get tees for a specific course
 router.get("/:courseId/tees", async (req, res) => {
-  try {
-    const courseId = req.params.courseId;
-    if (!courseId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing course ID" 
-      } as ApiResponse<never>);
-    }
+  const { courseId } = req.params;
+  
+  if (!courseId) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Missing course ID" 
+    } as ApiResponse<never>);
+  }
 
+  try {
     const course = await getCourseById(courseId, false);
     if (!course) {
       return res.status(404).json({ 
@@ -117,52 +80,22 @@ router.get("/:courseId/tees", async (req, res) => {
       } as ApiResponse<never>);
     }
 
-    const teeSets = new Map<string, {
-      id: string;
-      name: string;
-      courseId: string;
-      color?: TeeColor;
-      holes: {
-        holeNumber: number;
-        length: number;
-        par: number;
-      }[];
-    }>();
+    const teeSets = transformHolesToTeeSets(courseId, course.holes || []);
 
-    (course.holes || []).forEach(hole => {
-      (hole.tees || []).forEach(tee => {
-        if (!teeSets.has(tee.teeName)) {
-          teeSets.set(tee.teeName, {
-            id: `${courseId}-${tee.teeName.toLowerCase()}`,
-            name: tee.teeName,
-            courseId,
-            color: tee.teeColor,
-            holes: []
-          });
-        }
-        teeSets.get(tee.teeName)?.holes.push({
-          holeNumber: hole.holeNumber,
-          length: tee.length,
-          par: hole.par
-        });
-      });
-    });
-
-    const result = Array.from(teeSets.values());
-
-    res.json({ 
+  res.json({ 
       success: true,
-      data: result 
-    } as ApiResponse<typeof result>);
-  } catch (e) {
-    console.error("Error getting course tees:", e);
+      data: teeSets 
+    } as ApiResponse<typeof teeSets>);
+  } catch (error) {
+    console.error("Error getting course tees:", error);
     res.status(500).json({ 
       success: false,
       error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error"
     } as ApiResponse<never>);
   }
 });
+
 
 // Create a new course
 router.post("/", async (req, res) => {
@@ -189,8 +122,6 @@ router.post("/", async (req, res) => {
           length: tee.length
         }))
       })),
-      amenities: req.body.amenities || [],
-      courseType: req.body.courseType || 'public'
     };
 
     const id = await createCourse(courseRequest);
@@ -243,35 +174,28 @@ router.put("/:courseId", async (req, res) => {
   }
 });
 
-// Delete a course (soft delete)
+// Delete a course 
 router.delete("/:courseId", async (req, res) => {
+  const { courseId } = req.params;
+  
+  if (!courseId) {
+    return res.status(400).json({ success: false, error: "Missing course ID" } as ApiResponse<never>);
+  }
+
   try {
-    const courseId = req.params.courseId;
-    if (!courseId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing course ID" 
-      } as ApiResponse<never>);
-    }
-
     const deleted = await deleteCourse(courseId);
+    
     if (!deleted) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "Course not found" 
-      } as ApiResponse<never>);
+      return res.status(404).json({ success: false, error: "Course not found" } as ApiResponse<never>);
     }
 
-    res.json({ 
-      success: true,
-      message: "Course deleted successfully" 
-    } as ApiResponse<never>);
-  } catch (e) {
-    console.error("Error deleting course:", e);
+    res.json({ success: true, message: "Course deleted successfully" } as ApiResponse<never>);
+  } catch (error) {
+    console.error("Error deleting course:", error);
     res.status(500).json({ 
       success: false,
       error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error"
     } as ApiResponse<never>);
   }
 });
