@@ -8,7 +8,7 @@ export type CourseType = 'public' | 'private' | 'semi-private' | 'resort';
 export interface User {
   id: string;
   userName: string;
-  email?: string;
+  email: string;
   password?: string;
   firstName?: string;
   lastName?: string;
@@ -202,7 +202,7 @@ export interface GolfEquipment {
 // API Request/Response types
 export interface CreateUserRequest {
   userName: string;
-  email?: string;
+  email: string;
   password: string;
   firstName?: string;
   lastName?: string;

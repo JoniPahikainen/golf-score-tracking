@@ -11,13 +11,14 @@ import {
 
 export const RegisterPage = () => {
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { handleRegister, isLoading, error } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleRegister(userName, password);
+    await handleRegister(userName, email, password);
   };
 
   return (
@@ -42,6 +43,15 @@ export const RegisterPage = () => {
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               placeholder="Username"
+              className="w-full p-2 rounded bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              disabled={isLoading}
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
               className="w-full p-2 rounded bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               disabled={isLoading}

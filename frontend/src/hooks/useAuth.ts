@@ -36,13 +36,13 @@ export const useAuth = () => {
     };
   };
 
-  const handleLogin = async (username: string, password: string) => {
+  const handleLogin = async (email: string, password: string) => {
     setError(null);
     setIsLoading(true);
 
     try {
       const response = await api.post("/auth/login", { 
-        userName: username, 
+        email, 
         password 
       });
       
@@ -57,13 +57,14 @@ export const useAuth = () => {
     }
   };
 
-  const handleRegister = async (username: string, password: string) => {
+  const handleRegister = async (username: string, email: string, password: string) => {
     setError(null);
     setIsLoading(true);
 
     try {
       const response = await api.post("/auth/register", {
         userName: username,
+        email,
         password
       });
       navigate("/login");

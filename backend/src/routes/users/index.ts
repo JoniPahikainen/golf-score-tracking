@@ -106,6 +106,41 @@ router.get("/username/:username", async (req, res) => {
   }
 });
 
+// Get user by email
+router.get("/email/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Missing email" 
+      } as ApiResponse<never>);
+    }
+
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "User not found" 
+      } as ApiResponse<never>);
+    }
+
+    const { password, ...userData } = user;
+    
+    res.json({ 
+      success: true,
+      data: userData 
+    } as ApiResponse<typeof userData>);
+  } catch (e) {
+    console.error("Error getting user by email:", e);
+    res.status(500).json({ 
+      success: false,
+      error: "Internal server error",
+      message: e instanceof Error ? e.message : "Unknown error"
+    } as ApiResponse<never>);
+  }
+});
+
 // Update user
 router.put("/:userId", async (req, res) => {
   try {
@@ -115,18 +150,6 @@ router.put("/:userId", async (req, res) => {
         success: false, 
         error: "Missing user ID" 
       } as ApiResponse<never>);
-    }
-
-    // Validate handicap index if provided
-    if (req.body.handicapIndex !== undefined) {
-      const handicap = parseFloat(req.body.handicapIndex);
-      if (isNaN(handicap) || handicap < -5.0 || handicap > 54.0) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Handicap index must be between -5.0 and 54.0" 
-        } as ApiResponse<never>);
-      }
-      req.body.handicapIndex = handicap;
     }
 
     const updated = await updateUser(userId, req.body);

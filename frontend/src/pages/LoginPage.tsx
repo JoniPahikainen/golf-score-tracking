@@ -10,14 +10,14 @@ import {
 } from "@/components/ui/card";
 
 export const LoginPage = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { handleLogin, isLoading, error } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleLogin(username, password);
+    handleLogin(email, password);
   };
 
   return (
@@ -38,10 +38,10 @@ export const LoginPage = () => {
             )}
             
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
               className="w-full p-2 rounded bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               disabled={isLoading}
