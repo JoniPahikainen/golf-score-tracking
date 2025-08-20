@@ -1,4 +1,3 @@
-// src/hooks/useAuth.ts
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
