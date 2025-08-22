@@ -49,7 +49,6 @@ const transformCourseData = (courseData: any): Course => ({
   holeCount: courseData.hole_count,
   designer: courseData.designer,
   yearBuilt: courseData.year_built,
-  courseType: courseData.course_type,
   amenities: courseData.amenities || [],
   courseRating: courseData.course_rating,
   slopeRating: courseData.slope_rating,
@@ -92,8 +91,6 @@ export const createCourse = async (
         description: course.description,
         par_total: totalPar,
         hole_count: course.holes.length,
-        course_type: course.courseType || "public",
-        amenities: course.amenities || [],
         is_active: true,
         created_at: now,
         updated_at: now,
@@ -170,10 +167,7 @@ export const deleteCourseSoft = async (id: string): Promise<boolean> => {
 
 export const deleteCourse = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from("courses")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("courses").delete().eq("id", id);
 
     if (error) throw handleSupabaseError(error, "Failed to delete course");
     return true;
@@ -235,48 +229,54 @@ export const updateCourse = async (
   updates: Partial<Course>
 ): Promise<boolean> => {
   try {
-    const updateData: Record<string, any> = {
-      updated_at: new Date(),
+    const fieldMap: Record<keyof Course, string> = {
+      name: "name",
+      location: "location",
+      description: "description",
+      websiteUrl: "website_url",
+      phone: "phone",
+      email: "email",
+      address: "address",
+      city: "city",
+      state: "state",
+      country: "country",
+      postalCode: "postal_code",
+      latitude: "latitude",
+      longitude: "longitude",
+      designer: "designer",
+      yearBuilt: "year_built",
+      amenities: "amenities",
+      courseRating: "course_rating",
+      slopeRating: "slope_rating",
+      id: "",
+      parTotal: "",
+      holeCount: "",
+      isActive: "",
+      holes: "",
+      createdAt: "",
+      updatedAt: "",
     };
 
-    if (updates.name !== undefined) updateData.name = updates.name;
-    if (updates.location !== undefined) updateData.location = updates.location;
-    if (updates.description !== undefined)
-      updateData.description = updates.description;
-    if (updates.websiteUrl !== undefined)
-      updateData.website_url = updates.websiteUrl;
-    if (updates.phone !== undefined) updateData.phone = updates.phone;
-    if (updates.email !== undefined) updateData.email = updates.email;
-    if (updates.address !== undefined) updateData.address = updates.address;
-    if (updates.city !== undefined) updateData.city = updates.city;
-    if (updates.state !== undefined) updateData.state = updates.state;
-    if (updates.country !== undefined) updateData.country = updates.country;
-    if (updates.postalCode !== undefined)
-      updateData.postal_code = updates.postalCode;
-    if (updates.latitude !== undefined) updateData.latitude = updates.latitude;
-    if (updates.longitude !== undefined)
-      updateData.longitude = updates.longitude;
-    if (updates.designer !== undefined) updateData.designer = updates.designer;
-    if (updates.yearBuilt !== undefined)
-      updateData.year_built = updates.yearBuilt;
-    if (updates.courseType !== undefined)
-      updateData.course_type = updates.courseType;
-    if (updates.amenities !== undefined)
-      updateData.amenities = updates.amenities;
-    if (updates.courseRating !== undefined)
-      updateData.course_rating = updates.courseRating;
-    if (updates.slopeRating !== undefined)
-      updateData.slope_rating = updates.slopeRating;
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined && key in fieldMap) {
+        updateData[fieldMap[key as keyof Course]] = value;
+      }
+    }
 
     const { error } = await supabase
       .from("courses")
       .update(updateData)
       .eq("id", id);
 
-    if (error) throw handleSupabaseError(error, "Failed to update course");
+    if (error) {
+      throw handleSupabaseError(error, "Failed to update course");
+    }
+
     return true;
-  } catch (error) {
-    if (error instanceof Error) throw error;
+  } catch (err) {
+    if (err instanceof Error) throw err;
     throw new Error("Unknown error occurred while updating course");
   }
 };
