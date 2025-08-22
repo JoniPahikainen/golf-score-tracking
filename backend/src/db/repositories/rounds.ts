@@ -43,8 +43,6 @@ const transformRoundData = (roundData: any): Round => ({
   date: new Date(roundData.date),
   teeName: roundData.tee_name,
   title: roundData.title,
-  weather: roundData.weather,
-  temperature: roundData.temperature,
   notes: roundData.notes,
   status: roundData.status,
   isTournament: roundData.is_tournament,
@@ -141,8 +139,6 @@ export const createRound = async (
         date: new Date(round.date),
         tee_name: round.teeName,
         title: round.title,
-        weather: round.weather,
-        temperature: round.temperature,
         notes: round.notes,
         status: "active",
         is_tournament: false,
@@ -241,9 +237,6 @@ export const updateRound = async (
     if (updates.date !== undefined) updateData.date = updates.date;
     if (updates.teeName !== undefined) updateData.tee_name = updates.teeName;
     if (updates.title !== undefined) updateData.title = updates.title;
-    if (updates.weather !== undefined) updateData.weather = updates.weather;
-    if (updates.temperature !== undefined)
-      updateData.temperature = updates.temperature;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
     if (updates.status !== undefined) updateData.status = updates.status;
 
