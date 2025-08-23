@@ -2,6 +2,39 @@ import { supabase } from "../supabase";
 import { User, CreateUserRequest, DatabaseError } from "../types";
 import bcrypt from "bcrypt";
 
+// Define database field mappings
+const USER_FIELD_MAP: Record<keyof User, string | null> = {
+  id: "id",
+  userName: "user_name",
+  email: "email",
+  password: "password_hash",
+  firstName: "first_name",
+  lastName: "last_name",
+  handicapIndex: "handicap_index",
+  dateOfBirth: "date_of_birth",
+  phone: "phone",
+  profilePictureUrl: "profile_picture_url",
+  preferredTeeColor: "preferred_tee_color",
+  isActive: "is_active",
+  emailVerified: "email_verified",
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+};
+
+// Utility functions
+const handleDatabaseError = (context: string, error: any): never => {
+  const dbError: DatabaseError = new Error(`${context}: ${error.message}`);
+  dbError.code = error.code;
+  dbError.detail = error.details;
+  dbError.hint = error.hint;
+  throw dbError;
+};
+
+const handleUnknownError = (error: unknown, context: string): never => {
+  if (error instanceof Error) throw error;
+  throw new Error(`Unknown error occurred while ${context}`);
+};
+
 const transformUserData = (data: any, includeSensitive = false): User => ({
   id: data.id,
   userName: data.user_name,
@@ -17,123 +50,144 @@ const transformUserData = (data: any, includeSensitive = false): User => ({
   isActive: data.is_active,
   emailVerified: data.email_verified,
   createdAt: data.created_at ? new Date(data.created_at) : undefined,
-  updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
+  updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
 });
 
-const handleDbError = (message: string, error: any): never => {
-  const dbError: DatabaseError = new Error(`${message}: ${error.message}`);
-  dbError.code = error.code;
-  dbError.detail = error.details;
-  dbError.hint = error.hint;
-  throw dbError;
-};
-
-export const createUser = async (user: CreateUserRequest): Promise<string> => {
+// User creation
+export const createUser = async (userData: CreateUserRequest): Promise<string> => {
   try {
     const { data, error } = await supabase
       .from("users")
       .insert([{
-        user_name: user.userName,
-        email: user.email,
-        password_hash: user.password,
-        first_name: user.firstName,
-        last_name: user.lastName,
-        phone: user.phone,
-        date_of_birth: user.dateOfBirth ? new Date(user.dateOfBirth) : null,
+        user_name: userData.userName,
+        email: userData.email,
+        password_hash: await bcrypt.hash(userData.password, 12),
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        phone: userData.phone,
+        date_of_birth: userData.dateOfBirth ? new Date(userData.dateOfBirth) : null,
         is_active: true,
         email_verified: false,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       }])
       .select("id")
       .single();
 
-    if (error) handleDbError("Failed to create user", error);
+    if (error) handleDatabaseError("Failed to create user", error);
     if (!data) throw new Error("No data returned from user creation");
+    
     return data.id;
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error occurred while creating user");
+    handleUnknownError(error, "creating user");
+    return "";
   }
 };
 
-export const getUserById = async (id: string, includeSensitive = false): Promise<User | null> => {
-  try {
-    const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      handleDbError("Failed to get user", error);
-    }
-    return transformUserData(data, includeSensitive);
-  } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error occurred while getting user");
-  }
-};
-
-export const getUserByField = async (
-  field: "user_name" | "email",
-  value: string,
+// User retrieval
+export const getUserById = async (
+  id: string, 
   includeSensitive = false
 ): Promise<User | null> => {
   try {
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq(field, value)
+      .eq("id", id)
+      .single();
+
+    if (error?.code === "PGRST116") return null;
+    if (error) handleDatabaseError("Failed to get user", error);
+    
+    return transformUserData(data, includeSensitive);
+  } catch (error) {
+    handleUnknownError(error, "getting user");
+    return null;
+  }
+};
+
+export const getUserByField = async (
+  field: keyof Pick<User, "userName" | "email">,
+  value: string,
+  includeSensitive = false
+): Promise<User | null> => {
+  try {
+    const dbField = USER_FIELD_MAP[field === "userName" ? "userName" : "email"];
+    
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq(dbField!, value)
       .eq("is_active", true)
       .single();
 
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      handleDbError(`Failed to get user by ${field}`, error);
-    }
+    if (error?.code === "PGRST116") return null;
+    if (error) handleDatabaseError(`Failed to get user by ${field}`, error);
+    
     return transformUserData(data, includeSensitive);
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error(`Unknown error occurred while getting user by ${field}`);
+    handleUnknownError(error, "getting user by field");
+    return null;
   }
 };
 
-export const getAllUsers = async (safe = true, limit?: number, offset?: number): Promise<User[]> => {
+export const getAllUsers = async (
+  safe = true,
+  limit?: number,
+  offset?: number
+): Promise<User[]> => {
   try {
-    let query = supabase.from("users").select("*").eq("is_active", true);
+    let query = supabase
+      .from("users")
+      .select("*")
+      .eq("is_active", true);
+
     if (limit) query = query.limit(limit);
-    if (offset) query = query.range(offset, offset + (limit || 100) - 1);
+    if (offset) query = query.range(offset, offset + (limit || 10) - 1);
 
     const { data, error } = await query;
-    if (error) handleDbError("Failed to get users", error);
-    return (data || []).map((u) => transformUserData(u, !safe));
+    if (error) handleDatabaseError("Failed to get users", error);
+    
+    return (data || []).map(user => transformUserData(user, !safe));
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error occurred while getting users");
+    handleUnknownError(error, "getting users");
+    return [];
   }
 };
 
-export const updateUser = async (id: string, updates: Partial<User>): Promise<boolean> => {
+// User updates
+export const updateUser = async (
+  id: string,
+  updates: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>
+): Promise<boolean> => {
   try {
-    const updateData: Record<string, any> = {};
-    if (updates.firstName !== undefined) updateData.first_name = updates.firstName;
-    if (updates.lastName !== undefined) updateData.last_name = updates.lastName;
-    if (updates.email !== undefined) updateData.email = updates.email;
-    if (updates.phone !== undefined) updateData.phone = updates.phone;
-    if (updates.handicapIndex !== undefined) updateData.handicap_index = updates.handicapIndex;
-    if (updates.dateOfBirth !== undefined) updateData.date_of_birth = updates.dateOfBirth;
-    if (updates.profilePictureUrl !== undefined) updateData.profile_picture_url = updates.profilePictureUrl;
-    if (updates.preferredTeeColor !== undefined) updateData.preferred_tee_color = updates.preferredTeeColor;
-    if (updates.emailVerified !== undefined) updateData.email_verified = updates.emailVerified;
-    updateData.updated_at = new Date();
+    const updateData: Record<string, any> = { updated_at: new Date() };
 
-    const { error } = await supabase.from("users").update(updateData).eq("id", id);
-    if (error) handleDbError("Failed to update user", error);
+    Object.entries(updates).forEach(([key, value]) => {
+      const dbField = USER_FIELD_MAP[key as keyof User];
+      if (value !== undefined && dbField) {
+        updateData[dbField] = value;
+      }
+    });
+
+    const { error } = await supabase
+      .from("users")
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) handleDatabaseError("Failed to update user", error);
     return true;
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error occurred while updating user");
+    handleUnknownError(error, "updating user");
+    return false;
   }
 };
 
-export const verifyPassword = async (userId: string, password: string): Promise<boolean> => {
+// Password operations
+export const verifyPassword = async (
+  userId: string,
+  password: string
+): Promise<boolean> => {
   try {
     const user = await getUserById(userId, true);
     return !!(user?.password && await bcrypt.compare(password, user.password));
@@ -143,40 +197,75 @@ export const verifyPassword = async (userId: string, password: string): Promise<
   }
 };
 
-export const updatePassword = async (userId: string, newPassword: string): Promise<boolean> => {
+export const updatePassword = async (
+  userId: string,
+  newPassword: string
+): Promise<boolean> => {
   try {
     const passwordHash = await bcrypt.hash(newPassword, 12);
     const { error } = await supabase
       .from("users")
-      .update({ password_hash: passwordHash, updated_at: new Date() })
+      .update({ 
+        password_hash: passwordHash, 
+        updated_at: new Date() 
+      })
       .eq("id", userId);
-    if (error) handleDbError("Failed to update password", error);
+
+    if (error) handleDatabaseError("Failed to update password", error);
     return true;
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error occurred while updating password");
+    handleUnknownError(error, "updating password");
+    return false;
   }
 };
 
-const softDeleteUser = async (field: "id" | "user_name", value: string): Promise<boolean> => {
+// User deletion
+const softDeleteUser = async (
+  field: keyof Pick<User, "id" | "userName" | "email">,
+  value: string
+): Promise<boolean> => {
+  try {
+    const dbField = USER_FIELD_MAP[field];
+    const { error } = await supabase
+      .from("users")
+      .update({ 
+        is_active: false, 
+        updated_at: new Date() 
+      })
+      .eq(dbField!, value);
+
+    if (error) handleDatabaseError(`Failed to soft delete user by ${field}`, error);
+    return true;
+  } catch (error) {
+    handleUnknownError(error, "soft deleting user");
+    return false;
+  }
+};
+
+const hardDeleteUser = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from("users")
-      .update({ is_active: false, updated_at: new Date() })
-      .eq(field, value);
-    if (error) handleDbError(`Failed to delete user by ${field}`, error);
+      .delete()
+      .eq("id", id);
+
+    if (error) handleDatabaseError("Failed to delete user", error);
     return true;
   } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error(`Unknown error occurred while deleting user by ${field}`);
+    handleUnknownError(error, "deleting user");
+    return false;
   }
 };
 
-export const deleteUser = (id: string) => softDeleteUser("id", id);
-export const deleteUserByUsername = (username: string) => softDeleteUser("user_name", username);
+// Convenience functions
+export const deleteUserByEmailSoft = (email: string) => 
+  softDeleteUser("email", email);
+
+export const deleteUserByEmailHard = (email: string) => 
+  hardDeleteUser(email);
 
 export const getUserByUsername = (username: string, includeSensitive = false) =>
-  getUserByField("user_name", username, includeSensitive);
+  getUserByField("userName", username, includeSensitive);
 
 export const getUserByEmail = (email: string, includeSensitive = false) =>
   getUserByField("email", email, includeSensitive);

@@ -1,32 +1,33 @@
 import { Router } from "express";
-import { 
-  getAllUsers, 
-  deleteUser, 
-  getUserById, 
-  deleteUserByUsername, 
+import {
+  getAllUsers,
+  deleteUserByEmailSoft,
+  deleteUserByEmailHard,
+  getUserById,
   updateUser,
   getUserByUsername,
   getUserByEmail,
   updatePassword
 } from "../../db";
 import { ApiResponse } from "../../db/types";
+import {
+  validate,
+  userIdSchema,
+  usernameSchema,
+  emailSchema,
+  updatePasswordSchema
+} from "../../utils/userUtils";
 
 const router = Router();
 
-// Get all users
+// GET all users
 router.get("/", async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const offset = req.query.offset ? parseInt(req.query.offset as string) : undefined;
-    const users = await getAllUsers(true, limit, offset);
-    
-    res.json({ 
-      success: true,
-      data: users 
-    } as ApiResponse<typeof users>);
+    const users = await getAllUsers(true); // don't pass limit/offset
+    res.json({ success: true, data: users } as ApiResponse<typeof users>);
   } catch (e) {
     console.error("Error getting users:", e);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: "Internal server error",
       message: e instanceof Error ? e.message : "Unknown error"
@@ -34,249 +35,111 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get user by ID
-router.get("/:userId", async (req, res) => {
+
+// GET user by ID
+router.get("/:userId", validate(userIdSchema, "params"), async (req, res) => {
   try {
-    const userId = req.params.userId;
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing user ID" 
-      } as ApiResponse<never>);
-    }
-
+    const { userId } = req.params;
     const user = await getUserById(userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
-    // Remove password from response
     const { password, ...userData } = user;
-    
-    res.json({ 
-      success: true,
-      data: userData 
-    } as ApiResponse<typeof userData>);
+    res.json({ success: true, data: userData });
   } catch (e) {
     console.error("Error getting user by ID:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// Get user by username
-router.get("/username/:username", async (req, res) => {
+// GET user by username
+router.get("/username/:username", validate(usernameSchema, "params"), async (req, res) => {
   try {
-    const username = req.params.username;
-    if (!username) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing username" 
-      } as ApiResponse<never>);
-    }
-
+    const { username } = req.params;
     const user = await getUserByUsername(username);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
-    // Remove password from response
     const { password, ...userData } = user;
-    
-    res.json({ 
-      success: true,
-      data: userData 
-    } as ApiResponse<typeof userData>);
+    res.json({ success: true, data: userData });
   } catch (e) {
     console.error("Error getting user by username:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// Get user by email
-router.get("/email/:email", async (req, res) => {
+// GET user by email
+router.get("/email/:email", validate(emailSchema, "params"), async (req, res) => {
   try {
-    const email = req.params.email;
-    if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing email" 
-      } as ApiResponse<never>);
-    }
-
+    const { email } = req.params;
     const user = await getUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
     const { password, ...userData } = user;
-    
-    res.json({ 
-      success: true,
-      data: userData 
-    } as ApiResponse<typeof userData>);
+    res.json({ success: true, data: userData });
   } catch (e) {
     console.error("Error getting user by email:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// Update user
-router.put("/:userId", async (req, res) => {
+// UPDATE user
+router.put("/:userId", validate(userIdSchema, "params"), async (req, res) => {
   try {
-    const userId = req.params.userId;
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing user ID" 
-      } as ApiResponse<never>);
-    }
-
+    const { userId } = req.params;
     const updated = await updateUser(userId, req.body);
-    if (!updated) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
+    if (!updated) return res.status(404).json({ success: false, error: "User not found" });
 
-    res.json({ 
-      success: true,
-      message: "User updated successfully" 
-    } as ApiResponse<never>);
+    res.json({ success: true, message: "User updated successfully" });
   } catch (e) {
     console.error("Error updating user:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// Update user password
-router.put("/:userId/password", async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing user ID" 
-      } as ApiResponse<never>);
-    }
+// UPDATE password
+router.put("/:userId/password",
+  validate(userIdSchema, "params"),
+  validate(updatePasswordSchema, "body"),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { newPassword } = req.body;
 
-    if (!req.body.newPassword || req.body.newPassword.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "New password must be at least 6 characters long" 
-      } as ApiResponse<never>);
-    }
+      const updated = await updatePassword(userId, newPassword);
+      if (!updated) return res.status(404).json({ success: false, error: "User not found" });
 
-    const updated = await updatePassword(userId, req.body.newPassword);
-    if (!updated) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (e) {
+      console.error("Error updating password:", e);
+      res.status(500).json({ success: false, error: "Internal server error" });
     }
-
-    res.json({ 
-      success: true,
-      message: "Password updated successfully" 
-    } as ApiResponse<never>);
-  } catch (e) {
-    console.error("Error updating password:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
   }
-});
+);
 
-// Delete user by ID (soft delete)
-router.delete("/:userId", async (req, res) => {
+// DELETE user by email (soft)
+router.delete("/email/soft/:email", validate(emailSchema, "params"), async (req, res) => {
   try {
-    const userId = req.params.userId;
-    if (!userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing user ID" 
-      } as ApiResponse<never>);
-    }
+    const { email } = req.params;
+    const deleted = await deleteUserByEmailSoft(email);
+    if (!deleted) return res.status(404).json({ success: false, error: "User not found" });
 
-    const deleted = await deleteUser(userId);
-    if (!deleted) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
-
-    res.json({ 
-      success: true,
-      message: "User deleted successfully" 
-    } as ApiResponse<never>);
+    res.json({ success: true, message: "User deleted successfully" });
   } catch (e) {
     console.error("Error deleting user:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
-// Delete user by username (soft delete)
-router.delete("/username/:username", async (req, res) => {
+// DELETE user by email (hard)
+router.delete("/email/:email", validate(emailSchema, "params"), async (req, res) => {
   try {
-    const username = req.params.username;
-    if (!username) {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Missing username" 
-      } as ApiResponse<never>);
-    }
+    const { email } = req.params;
+    const deleted = await deleteUserByEmailHard(email);
+    if (!deleted) return res.status(404).json({ success: false, error: "User not found" });
 
-    const deleted = await deleteUserByUsername(username);
-    if (!deleted) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
-      } as ApiResponse<never>);
-    }
-
-    res.json({ 
-      success: true,
-      message: "User deleted successfully" 
-    } as ApiResponse<never>);
+    res.json({ success: true, message: "User deleted successfully" });
   } catch (e) {
-    console.error("Error deleting user by username:", e);
-    res.status(500).json({ 
-      success: false,
-      error: "Internal server error",
-      message: e instanceof Error ? e.message : "Unknown error"
-    } as ApiResponse<never>);
+    console.error("Error deleting user:", e);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
