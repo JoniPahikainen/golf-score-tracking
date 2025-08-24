@@ -23,7 +23,7 @@ const router = Router();
 // GET all users
 router.get("/", async (req, res) => {
   try {
-    const users = await getAllUsers(true); // don't pass limit/offset
+    const users = await getAllUsers(true);
     res.json({ success: true, data: users } as ApiResponse<typeof users>);
   } catch (e) {
     console.error("Error getting users:", e);
