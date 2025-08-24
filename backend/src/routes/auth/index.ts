@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { getUserByEmail, createUser, deleteUserByUsername } from "../../db";
+import { getUserByEmail, createUser } from "../../db";
 import { generateToken } from "../../utils/jwt";
 
 const router = Router();
@@ -27,6 +27,9 @@ router.post("/login", async (req, res) => {
       console.log("User has no password set:", email); // Debug
       return res.status(401).json({ error: "Invalid email or password" });
     }
+
+    console.log("Password:", password); // Debug
+    console.log("User password:", user.password); // Debug
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -77,6 +80,7 @@ router.post("/register", async (req, res) => {
     
     console.log("Hashing password..."); // Debug
     const hashed = await bcrypt.hash(password, 10);
+    console.log("Hashed password:", hashed); // Debug
     console.log("Creating user..."); // Debug
     const id = await createUser({ 
       userName, 
@@ -92,38 +96,6 @@ router.post("/register", async (req, res) => {
       error: "Internal server error", 
       details: e instanceof Error ? e.message : "Unknown error" 
     });
-  }
-});
-
-router.delete("/:username", async (req, res) => {
-  try {
-    const { username } = req.params;
-    
-    if (!username) {
-      return res.status(400).json({ error: "Username is required" });
-    }
-
-    const user = await getUserByEmail(username);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const deleted = await deleteUserByUsername(username);
-    
-    if (deleted) {
-      res.json({ 
-        success: true,
-        message: `User ${username} deleted successfully` 
-      });
-    } else {
-      res.status(500).json({ 
-        success: false,
-        error: "Failed to delete user" 
-      });
-    }
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
   }
 });
 
