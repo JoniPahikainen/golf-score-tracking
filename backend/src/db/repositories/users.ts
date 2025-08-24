@@ -61,7 +61,7 @@ export const createUser = async (userData: CreateUserRequest): Promise<string> =
       .insert([{
         user_name: userData.userName,
         email: userData.email,
-        password_hash: await bcrypt.hash(userData.password, 12),
+        password_hash: userData.password,
         first_name: userData.firstName,
         last_name: userData.lastName,
         phone: userData.phone,
@@ -219,7 +219,7 @@ export const updatePassword = async (
   }
 };
 
-// User deletion
+// User deletion (soft delete)
 const softDeleteUser = async (
   field: keyof Pick<User, "id" | "userName" | "email">,
   value: string
@@ -242,12 +242,14 @@ const softDeleteUser = async (
   }
 };
 
-const hardDeleteUser = async (id: string): Promise<boolean> => {
+// User deletion (hard delete)
+const hardDeleteUser = async (field: keyof Pick<User, "id" | "userName" | "email">, value: string): Promise<boolean> => {
   try {
+    const dbField = USER_FIELD_MAP[field];
     const { error } = await supabase
       .from("users")
       .delete()
-      .eq("id", id);
+      .eq(dbField!, value);
 
     if (error) handleDatabaseError("Failed to delete user", error);
     return true;
@@ -262,7 +264,7 @@ export const deleteUserByEmailSoft = (email: string) =>
   softDeleteUser("email", email);
 
 export const deleteUserByEmailHard = (email: string) => 
-  hardDeleteUser(email);
+  hardDeleteUser("email", email);
 
 export const getUserByUsername = (username: string, includeSensitive = false) =>
   getUserByField("userName", username, includeSensitive);
