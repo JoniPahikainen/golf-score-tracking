@@ -34,7 +34,7 @@ export const RegisterPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="text-red-400 text-sm bg-red-900/20 border border-red-700 rounded-lg p-3">
-                {error.message}
+                {error}
               </div>
             )}
 
