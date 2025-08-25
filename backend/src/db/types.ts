@@ -123,10 +123,7 @@ export interface CreateRoundRequest {
   date: string;
   teeName: string;
   title?: string;
-  players: {
-    userId: string;
-    handicapAtTime?: number;
-  }[];
+  players: RoundPlayer[];
   notes?: string;
 }
 
@@ -182,6 +179,7 @@ export interface PlayerScore {
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  
 }
 
 export interface DatabaseError extends Error {
