@@ -1,8 +1,8 @@
 import { Router } from "express";
 import {
   getAllUsers,
-  deleteUserByEmailSoft,
-  deleteUserByEmailHard,
+  deleteUserByIdSoft,
+  deleteUserById,
   getUserById,
   updateUser,
   getUserByUsername,
@@ -15,7 +15,8 @@ import {
   userIdSchema,
   usernameSchema,
   emailSchema,
-  updatePasswordSchema
+  updatePasswordSchema,
+  idSchema
 } from "../../utils/userUtils";
 
 const router = Router();
@@ -102,9 +103,9 @@ router.put("/:userId/password",
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const { newPassword } = req.body;
+      const { password } = req.body;
 
-      const updated = await updatePassword(userId, newPassword);
+      const updated = await updatePassword(userId, password);
       if (!updated) return res.status(404).json({ success: false, error: "User not found" });
 
       res.json({ success: true, message: "Password updated successfully" });
@@ -115,11 +116,11 @@ router.put("/:userId/password",
   }
 );
 
-// DELETE user by email (soft)
-router.delete("/email/soft/:email", validate(emailSchema, "params"), async (req, res) => {
+// DELETE user by id (soft)
+router.delete("/id/soft/:id", validate(idSchema, "params"), async (req, res) => {
   try {
-    const { email } = req.params;
-    const deleted = await deleteUserByEmailSoft(email);
+    const { id } = req.params;
+    const deleted = await deleteUserByIdSoft(id);
     if (!deleted) return res.status(404).json({ success: false, error: "User not found" });
 
     res.json({ success: true, message: "User deleted successfully" });
@@ -129,11 +130,11 @@ router.delete("/email/soft/:email", validate(emailSchema, "params"), async (req,
   }
 });
 
-// DELETE user by email (hard)
-router.delete("/email/:email", validate(emailSchema, "params"), async (req, res) => {
+// DELETE user by id (hard)
+router.delete("/id/:id", validate(idSchema, "params"), async (req, res) => {
   try {
-    const { email } = req.params;
-    const deleted = await deleteUserByEmailHard(email);
+    const { id } = req.params;
+    const deleted = await deleteUserById(id);
     if (!deleted) return res.status(404).json({ success: false, error: "User not found" });
 
     res.json({ success: true, message: "User deleted successfully" });
@@ -142,5 +143,6 @@ router.delete("/email/:email", validate(emailSchema, "params"), async (req, res)
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+
 
 export default router;
