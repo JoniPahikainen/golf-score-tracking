@@ -89,12 +89,13 @@ router.post("/register", async (req, res) => {
     });
     
     console.log("User created successfully:", { id, userName, email, hashed }); // Debug
-    res.status(201).json({ message: "User created", userId: id, userName, email });
+    res.status(201).json({ success: true, message: "User created", userId: id, userName, email });
   } catch (e) {
     console.error("Registration error:", e);
-    res.status(500).json({ 
-      error: "Internal server error", 
-      details: e instanceof Error ? e.message : "Unknown error" 
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: e instanceof Error ? e.message : "Unknown error"
     });
   }
 });
