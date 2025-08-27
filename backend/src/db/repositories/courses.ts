@@ -29,6 +29,19 @@ const COURSE_SELECT_FIELDS = `
   )
 `;
 
+const COURSE_SELECT_MINIMAL = `
+  id,
+  name,
+  location,
+  description,
+  country,
+  par_total,
+  hole_count,
+  is_active,
+  created_at,
+  updated_at
+`;
+
 // Transform raw course data to consistent format
 const transformCourseData = (courseData: any): Course => ({
   id: courseData.id,
@@ -183,7 +196,7 @@ export const getAllCourses = async (
   try {
     let query = supabase
       .from("courses")
-      .select(COURSE_SELECT_FIELDS)
+      .select(COURSE_SELECT_MINIMAL)
       .order("name");
 
     if (!includeInactive) query = query.eq("is_active", true);
