@@ -168,39 +168,67 @@ export const courseData = {
     ]
 }
 
-export const createRoundData = (userId: string, courseId: string) => {
-    return {
-      courseId: courseId,
-      date: "2025-07-26T12:00:00Z",
-      teeName: "White Tees",
-      title: "Friendly Match - Sunny Hills",
-      players: [
+
+export const roundPlayerId = "63147d7c-4d96-4b34-b965-a93d013a047a";
+export const roundPlayerId2 = "a76a009a-d4a5-466c-843a-fb379627ef97";
+export const roundCourseId = "3c1d3f8d-569b-405f-814d-f982bfc2af47";
+
+
+export const createRoundData = {
+    courseId: roundCourseId,
+    date: "2025-07-26T12:00:00Z",
+    teeName: "White Tees",
+    title: "Friendly Match - Sunny Hills",
+    players: [
         {
-          userId: userId,
-          handicapAtTime: 12.4,
-          scores: [
-            { holeNumber: 1, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 2, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
-            { holeNumber: 3, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
-            { holeNumber: 4, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 5, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
-            { holeNumber: 6, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
-            { holeNumber: 7, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 8, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 9, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 10, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
-            { holeNumber: 11, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
-            { holeNumber: 12, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 13, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 14, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
-            { holeNumber: 15, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 16, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
-            { holeNumber: 17, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
-            { holeNumber: 18, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 }
-          ]
+            userId: roundPlayerId,
+            handicapAtTime: 12.4,
+            scores: [
+                { holeNumber: 1, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 2, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 3, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 4, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 5, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 6, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 7, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 8, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 9, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 10, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 11, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 12, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 13, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 14, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 15, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 16, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 17, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 18, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 }
+            ]
+        },
+        {
+            userId: roundPlayerId2,
+            handicapAtTime: 10.2,
+            scores: [
+                { holeNumber: 1, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 2, strokes: 5, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 3, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 4, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 5, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 6, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 7, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 8, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 9, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 10, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 11, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 12, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 13, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 14, strokes: 4, putts: 2, fairwayHit: true, greenInRegulation: true, penalties: 0 },
+                { holeNumber: 15, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 16, strokes: 6, putts: 3, fairwayHit: false, greenInRegulation: false, penalties: 1 },
+                { holeNumber: 17, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 },
+                { holeNumber: 18, strokes: 5, putts: 2, fairwayHit: true, greenInRegulation: false, penalties: 0 }
+            ]
         }
-      ]
-    };
-  };
+    ]
+};
 
 
