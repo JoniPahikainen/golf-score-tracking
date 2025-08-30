@@ -6,8 +6,10 @@ import {
   getRoundsByUserId,
   getRoundById,
   updateScore,
+  getAllRounds,
+  deleteAllRounds
 } from "../../db";
-import { ApiResponse } from "../../db/types";
+import { ApiResponse, Round } from "../../db/types";
 import { createRoundSchema } from "../../utils/roundUtils";
 import { z } from "zod";
 
@@ -17,7 +19,17 @@ const router = Router();
 router.post("/", async (req, res) => {
   try {
     const roundRequest = createRoundSchema.parse(req.body);
-    const id = await createRound(roundRequest);
+
+    // Add totalScore to each player
+    const roundRequestWithTotalScore = {
+      ...roundRequest,
+      players: roundRequest.players.map(player => ({
+        ...player,
+        totalScore: player.scores.reduce((sum, score) => sum + score.strokes, 0)
+      }))
+    };
+
+    const id = await createRound(roundRequestWithTotalScore);
 
     res.status(201).json({
       success: true,
@@ -62,8 +74,8 @@ router.put("/:roundId", async (req, res) => {
     return res.json({
       success: true,
       message: "Round updated successfully",
-      data: updatedRound,
-    } as ApiResponse<typeof updatedRound>);
+      data: req.body,
+    } as ApiResponse<typeof req.body>);
   } catch (error) {
     console.error("Error updating round:", error);
     const errorMessage =
@@ -224,6 +236,18 @@ router.get("/:roundId", async (req, res) => {
       message: error instanceof Error ? error.message : String(error),
     } as ApiResponse<never>);
   }
+});
+
+// Get all rounds
+router.get("/", async (req, res) => {
+  const rounds = await getAllRounds();
+  res.json(rounds);
+});
+
+// Delete all rounds
+router.delete("/", async (req, res) => {
+  const deleted = await deleteAllRounds();
+  res.json(deleted);
 });
 
 export default router;
