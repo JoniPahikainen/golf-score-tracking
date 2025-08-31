@@ -149,8 +149,6 @@ export const createRound = async (
     if (roundError)
       throw handleSupabaseError(roundError, "Failed to create round");
 
-    console.log("Round created with ID:", roundData.id);
-
     await Promise.all(
       round.players.map(async (player) => {
         const totalScore = player.scores.reduce((sum, score) => sum + score.strokes, 0);
@@ -158,8 +156,6 @@ export const createRound = async (
         const fairwaysHit = player.scores.filter(score => score.fairwayHit).length;
         const greensInRegulation = player.scores.filter(score => score.greenInRegulation).length;
         const totalPenalties = player.scores.reduce((sum, score) => sum + (score.penalties ?? 0), 0);
-
-        console.log(`Creating player ${player.userId} with scores:`, player.scores);
 
         const { data: playerData, error: playerError } = await supabase
           .from("round_players")
@@ -179,8 +175,6 @@ export const createRound = async (
         if (playerError)
           throw handleSupabaseError(playerError, "Failed to create player");
 
-        console.log("Round player created with ID:", playerData.id);
-
         const scoresData = player.scores.map(score => ({
           round_player_id: playerData.id,
           hole_number: score.holeNumber,
@@ -198,17 +192,13 @@ export const createRound = async (
           .insert(scoresData);
 
         if (scoresError) {
-          console.error("Error creating scores:", scoresError);
           throw handleSupabaseError(scoresError, "Failed to create player scores");
         }
-
-        console.log(`Created ${scoresData.length} scores for player ${player.userId}`);
       })
     );
 
     return roundData.id;
   } catch (error) {
-    console.error("Error in createRound:", error);
     if (error instanceof Error) throw error;
     throw new Error("Unknown error creating round");
   }

@@ -157,7 +157,6 @@ router.delete("/:roundId", async (req, res) => {
     } as ApiResponse<never>);
   } catch (error) {
     console.error("Error deleting round:", error);
-
     return res.status(500).json({
       success: false,
       error: "Internal server error",
@@ -194,7 +193,6 @@ router.get("/user/:userId", async (req, res) => {
     } as ApiResponse<typeof rounds>);
   } catch (error) {
     console.error("Error getting rounds by user ID:", error);
-
     return res.status(500).json({
       success: false,
       error: "Internal server error",
@@ -229,7 +227,6 @@ router.get("/:roundId", async (req, res) => {
     } as ApiResponse<typeof round>);
   } catch (error) {
     console.error("Error getting round by ID:", error);
-
     return res.status(500).json({
       success: false,
       error: "Internal server error",
