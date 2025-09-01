@@ -177,7 +177,7 @@ export const roundCourseId = "3c1d3f8d-569b-405f-814d-f982bfc2af47";
 export const createRoundData = {
     courseId: roundCourseId,
     date: "2025-07-26T12:00:00Z",
-    teeName: "White Tees",
+    teeName: "White",
     title: "Friendly Match - Sunny Hills",
     players: [
         {

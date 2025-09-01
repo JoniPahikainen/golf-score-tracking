@@ -72,8 +72,8 @@ describe("Round API", () => {
     
     expect(player1).toBeDefined();
     expect(player2).toBeDefined();
-    expect(player1).toHaveProperty("handicapAtTime");
-    expect(player2).toHaveProperty("handicapAtTime");
+    expect(player1).toHaveProperty("hcpAtTime");
+    expect(player2).toHaveProperty("hcpAtTime");
     expect(player1).toHaveProperty("scores");
     expect(player2).toHaveProperty("scores");
     expect(Array.isArray(player1.scores)).toBe(true);
