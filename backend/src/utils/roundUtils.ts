@@ -9,7 +9,7 @@ export const createRoundSchema = z.object({
   players: z.array(
     z.object({
       userId: z.string().uuid(),
-      handicapAtTime: z.number().optional().default(0),
+      hcpAtTime: z.number().optional().default(54),
       scores: z.array(
         z.object({
           holeNumber: z.number().int().min(1).max(18),
@@ -19,7 +19,7 @@ export const createRoundSchema = z.object({
           greenInRegulation: z.boolean().default(false).optional(),
           penalties: z.number().int().min(0).max(5).default(0).optional(),
         })
-      )
+      ).optional().default([])
     })
   ).min(1)
 });
