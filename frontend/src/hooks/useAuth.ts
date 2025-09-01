@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
+import { useUser } from "@/contexts/UserContext";
 
 interface ApiError {
   message: string;
@@ -8,10 +9,10 @@ interface ApiError {
 }
 
 export const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
+  const { user, setUser, logout: contextLogout } = useUser();
 
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
@@ -19,8 +20,11 @@ export const useAuth = () => {
 
     try {
       const { data } = await api.post("/auth/login", { email, password });
+      
+      // Store token and user data
       localStorage.setItem("token", data.token);
-      setIsLoggedIn(true);
+      setUser(data.user);
+      
       navigate("/app");
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
@@ -44,15 +48,15 @@ export const useAuth = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
+    contextLogout();
     navigate("/login");
   };
 
   return {
-    isLoggedIn,
+    isLoggedIn: !!user,
     isLoading,
     error,
+    user,
     handleLogin,
     handleRegister,
     handleLogout,
