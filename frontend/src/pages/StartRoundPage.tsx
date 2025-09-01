@@ -42,20 +42,22 @@ export const StartRoundPage = () => {
     title?: string;
   }) => {
     try {
-      const [_, teeSetName] = roundData.teeId.split('-');
-      
+      const selectedTee = teeSets.find(tee => tee.id === roundData.teeId);
+      const teeColor = selectedTee?.color || 'white';
+
+
       const response = await api.post("/rounds", {
         courseId: roundData.courseId,
-        teeSet: teeSetName,
+        teeName: teeColor.charAt(0).toUpperCase() + teeColor.slice(1),
         date: roundData.date.toISOString(),
         title: roundData.title,
         players: roundData.players.map(p => ({ 
-          id: p.id,
-          name: p.name 
+          userId: p.id,
+          hcpAtTime: 54, // FIX: Default handicap, can be updated later
+          scores: []
         }))
       });
-      
-      navigate(`/app/score-entry/${response.data.roundId}`);
+      navigate(`/app/score-entry/${response.data.data.roundId}`);
     } catch (error) {
       console.error("Error starting round:", error);
     }
