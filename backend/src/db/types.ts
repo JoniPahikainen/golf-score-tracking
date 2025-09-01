@@ -149,7 +149,7 @@ export interface RoundPlayer {
   id?: string;
   roundId?: string;
   userId: string;
-  handicapAtTime: number;
+  hcpAtTime: number;
   totalScore: number;
   totalPutts?: number;
   fairwaysHit?: number;

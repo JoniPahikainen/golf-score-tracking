@@ -162,7 +162,7 @@ export const createRound = async (
           .insert({
             round_id: roundData.id,
             user_id: player.userId,
-            handicap_at_time: player.handicapAtTime || 0,
+            handicap_at_time: player.hcpAtTime || 54,
             total_score: totalScore,
             total_putts: totalPutts,
             fairways_hit: fairwaysHit,
