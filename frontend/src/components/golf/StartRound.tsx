@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { X, Calendar } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 import {
   Select,
   SelectContent,
@@ -53,15 +54,26 @@ interface StartRoundProps {
 }
 
 export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoundProps) => {
-  const [players, setPlayers] = useState<BasicPlayer[]>([
-    { id: "1", name: "You" },
-  ]);
+  const { user } = useUser();
+  const [players, setPlayers] = useState<BasicPlayer[]>([]);
   const [newName, setNewName] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedTee, setSelectedTee] = useState<string>("");
   const [roundDate, setRoundDate] = useState<Date>(new Date());
   const [roundTitle, setRoundTitle] = useState("");
   const [isLoadingTees, setIsLoadingTees] = useState(false);
+
+  // Initialize with current user as first player
+  useEffect(() => {
+    if (user) {
+      setPlayers([{
+        id: user.id,
+        name: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.userName
+      }]);
+    }
+  }, [user]);
 
   const handleCourseChange = (courseId: string) => {
     setSelectedCourse(courseId);
@@ -162,7 +174,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
             <SelectContent className="bg-slate-800 text-white border-slate-700">
               {filteredTees.map((tee) => (
                 <SelectItem key={tee.id} value={tee.id}>
-                  {tee.name}
+                  {tee.color}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -204,7 +216,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
               className="p-3 flex justify-between items-center bg-slate-800 text-white border-slate-700"
             >
               <span>{p.name}</span>
-              {p.id !== "1" && (
+              {p.id !== user?.id && (
                 <Button
                   size="sm"
                   variant="ghost"
