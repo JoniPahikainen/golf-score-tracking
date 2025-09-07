@@ -78,7 +78,6 @@ A full-stack application for tracking golf scores and rounds with React, TypeScr
 ### Backend
 - `npm run dev` - Start development server
 - `npm test` - Run tests
-- `npm run test:watch` - Run tests in watch mode
 
 ### Frontend
 - `npm run dev` - Start development server
