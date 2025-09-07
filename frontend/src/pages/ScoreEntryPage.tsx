@@ -22,7 +22,7 @@ export const ScoreEntryPage = () => {
   useEffect(() => {
     const fetchRoundData = async () => {
       try {
-        const response = await api.get(`/rounds/round/${roundId}`);
+        const response = await api.get(`/rounds/${roundId}`);
         const roundData = response.data;
         const roundPlayers = roundData.players || [];
 

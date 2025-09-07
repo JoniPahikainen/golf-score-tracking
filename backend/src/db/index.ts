@@ -1,3 +1,3 @@
 export * from "./repositories";
-export * from "./firestore";
+export * from "./supabase";
 export * from "./types";

@@ -1,27 +1,36 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { getUserByUsername, createUser, deleteUserByUsername } from "../../db";
+import { getUserByEmail, createUser } from "../../db";
 import { generateToken } from "../../utils/jwt";
 
 const router = Router();
 
 router.post("/login", async (req, res) => {
   try {
-    const { userName, password } = req.body;
-    if (!userName || !password)
-      return res.status(400).json({ error: "Missing username or password" });
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing email or password" });
+    }
 
-    const user = await getUserByUsername(userName);
-    if (!user || !user.password)
-      return res.status(401).json({ error: "Invalid username or password" });
+    const user = await getUserByEmail(email, true);
+    
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+    
+    if (!user.password) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ error: "Invalid username or password" });
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
     const token = generateToken({
       id: user.id,
       userName: user.userName,
+      email: user.email,
     });
 
     const { password: _, ...userData } = user;
@@ -33,60 +42,41 @@ router.post("/login", async (req, res) => {
       user: userData,
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Login error:", e);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: e instanceof Error ? e.message : "Unknown error" 
+    });
   }
 });
 
 router.post("/register", async (req, res) => {
   try {
-    const { userName, password } = req.body;
-    if (!userName || !password) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const { userName, email, password } = req.body;
+    if (!userName || !email || !password) {
+      return res.status(400).json({ error: "Missing required fields: username, email, and password" });
     }
+    
+    const existingUserByEmail = await getUserByEmail(email);
+    if (existingUserByEmail) {
+      return res.status(409).json({ error: "Email already exists" });
+    }
+    
     const hashed = await bcrypt.hash(password, 10);
     const id = await createUser({ 
       userName, 
-      password: hashed, 
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+      email,
+      password: hashed
     });
-    res.status(201).json({ message: "User created", userId: id, userName });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-router.delete("/:username", async (req, res) => {
-  try {
-    const { username } = req.params;
     
-    if (!username) {
-      return res.status(400).json({ error: "Username is required" });
-    }
-
-    const user = await getUserByUsername(username);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const deleted = await deleteUserByUsername(username);
-    
-    if (deleted) {
-      res.json({ 
-        success: true,
-        message: `User ${username} deleted successfully` 
-      });
-    } else {
-      res.status(500).json({ 
-        success: false,
-        error: "Failed to delete user" 
-      });
-    }
+    res.status(201).json({ success: true, message: "User created", userId: id, userName, email });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Registration error:", e);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: e instanceof Error ? e.message : "Unknown error"
+    });
   }
 });
 

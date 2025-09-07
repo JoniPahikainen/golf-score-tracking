@@ -1,28 +1,295 @@
-import { db as firestore } from "../../firebase";
-import { Course } from "../types";
+import { supabase } from "../supabase";
+import { Course, CreateCourseRequest, DatabaseError } from "../types";
 
-const collection = firestore.collection("courses");
+// Utility function for consistent error handling
+const handleSupabaseError = (error: any, context: string): DatabaseError => {
+  const dbError = new Error(`${context}: ${error.message}`) as DatabaseError;
+  dbError.code = error.code;
+  dbError.detail = error.details;
+  return dbError;
+};
 
-export const createCourse = async (course: Omit<Course, "id">): Promise<string> => {
-  const ref = await collection.add(course);
-  return ref.id;
+// Common course fields for selects
+const COURSE_SELECT_FIELDS = `
+  *,
+  course_holes (
+    id,
+    hole_number,
+    par,
+    handicap_ranking,
+    description,
+    course_tees (
+      id,
+      tee_name,
+      tee_color,
+      length,
+      course_rating,
+      slope_rating
+    )
+  )
+`;
+
+const COURSE_SELECT_MINIMAL = `
+  id,
+  name,
+  location,
+  description,
+  country,
+  par_total,
+  hole_count,
+  is_active,
+  created_at,
+  updated_at
+`;
+
+// Transform raw course data to consistent format
+const transformCourseData = (courseData: any): Course => ({
+  id: courseData.id,
+  name: courseData.name,
+  location: courseData.location,
+  description: courseData.description,
+  websiteUrl: courseData.website_url,
+  phone: courseData.phone,
+  email: courseData.email,
+  address: courseData.address,
+  city: courseData.city,
+  state: courseData.state,
+  country: courseData.country,
+  postalCode: courseData.postal_code,
+  latitude: courseData.latitude,
+  longitude: courseData.longitude,
+  parTotal: courseData.par_total,
+  holeCount: courseData.hole_count,
+  designer: courseData.designer,
+  yearBuilt: courseData.year_built,
+  amenities: courseData.amenities || [],
+  courseRating: courseData.course_rating,
+  slopeRating: courseData.slope_rating,
+  isActive: courseData.is_active,
+  holes: (courseData.course_holes || [])
+    .sort((a: any, b: any) => a.hole_number - b.hole_number)
+    .map((hole: any) => ({
+      id: hole.id,
+      courseId: courseData.id,
+      holeNumber: hole.hole_number,
+      par: hole.par,
+      handicapRanking: hole.handicap_ranking,
+      description: hole.description,
+      tees: (hole.course_tees || []).map((tee: any) => ({
+        id: tee.id,
+        holeId: hole.id,
+        teeName: tee.tee_name,
+        teeColor: tee.tee_color,
+        length: tee.length,
+        courseRating: tee.course_rating,
+        slopeRating: tee.slope_rating,
+      })),
+    })),
+  createdAt: new Date(courseData.created_at),
+  updatedAt: new Date(courseData.updated_at),
+});
+
+export const createCourse = async (
+  course: CreateCourseRequest
+): Promise<string> => {
+  try {
+    const totalPar = course.holes.reduce((sum, hole) => sum + hole.par, 0);
+    const now = new Date();
+
+    const { data: courseData, error: courseError } = await supabase
+      .from("courses")
+      .insert({
+        name: course.name,
+        location: course.location,
+        description: course.description,
+        par_total: totalPar,
+        hole_count: course.holes.length,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (courseError)
+      throw handleSupabaseError(courseError, "Failed to create course");
+
+    const courseId = courseData.id;
+
+    await Promise.all(
+      course.holes.map(async (hole) => {
+        const { data: holeData, error: holeError } = await supabase
+          .from("course_holes")
+          .insert({
+            course_id: courseId,
+            hole_number: hole.holeNumber,
+            par: hole.par,
+            handicap_ranking: hole.handicapRanking,
+          })
+          .select("id")
+          .single();
+
+        if (holeError)
+          throw handleSupabaseError(
+            holeError,
+            `Failed to create hole ${hole.holeNumber}`
+          );
+
+        if (hole.tees?.length) {
+          const { error: teesError } = await supabase
+            .from("course_tees")
+            .insert(
+              hole.tees.map((tee) => ({
+                hole_id: holeData.id,
+                tee_name: tee.teeName,
+                tee_color: tee.teeColor,
+                length: tee.length,
+              }))
+            );
+
+          if (teesError)
+            throw handleSupabaseError(
+              teesError,
+              `Failed to create tees for hole ${hole.holeNumber}`
+            );
+        }
+      })
+    );
+
+    return courseId;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while creating course");
+  }
+};
+
+export const deleteCourseSoft = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("courses")
+      .update({ is_active: false, updated_at: new Date() })
+      .eq("id", id);
+
+    if (error) throw handleSupabaseError(error, "Failed to delete course");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while deleting course");
+  }
 };
 
 export const deleteCourse = async (id: string): Promise<boolean> => {
-  const ref = collection.doc(id);
-  const doc = await ref.get();
-  if (!doc.exists) return false;
-  await ref.delete();
-  return true;
+  try {
+    const { error } = await supabase.from("courses").delete().eq("id", id);
+
+    if (error) throw handleSupabaseError(error, "Failed to delete course");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while deleting course");
+  }
 };
 
-export const getAllCourses = async (): Promise<Course[]> => {
-  const snap = await collection.get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Course, "id">) }));
+export const getAllCourses = async (
+  includeInactive: boolean = false
+): Promise<Course[]> => {
+  try {
+    let query = supabase
+      .from("courses")
+      .select(COURSE_SELECT_MINIMAL)
+      .order("name");
+
+    if (!includeInactive) query = query.eq("is_active", true);
+
+    const { data: coursesData, error } = await query;
+
+    if (error) throw handleSupabaseError(error, "Failed to get courses");
+
+    return coursesData?.map(transformCourseData) || [];
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while getting courses");
+  }
 };
 
-export const getCourseById = async (id: string): Promise<Course | null> => {
-  const doc = await collection.doc(id).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...(doc.data() as Omit<Course, "id">) };
+export const getCourseById = async (
+  id: string,
+  includeInactive: boolean = false
+): Promise<Course | null> => {
+  try {
+    let query = supabase
+      .from("courses")
+      .select(COURSE_SELECT_FIELDS)
+      .eq("id", id);
+
+    if (!includeInactive) query = query.eq("is_active", true);
+
+    const { data: courseData, error } = await query.single();
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw handleSupabaseError(error, "Failed to get course");
+    }
+
+    return transformCourseData(courseData);
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred while getting course");
+  }
+};
+
+export const updateCourse = async (
+  id: string,
+  updates: Partial<Course>
+): Promise<boolean> => {
+  try {
+    const fieldMap: Record<keyof Course, string> = {
+      name: "name",
+      location: "location",
+      description: "description",
+      websiteUrl: "website_url",
+      phone: "phone",
+      email: "email",
+      address: "address",
+      city: "city",
+      state: "state",
+      country: "country",
+      postalCode: "postal_code",
+      latitude: "latitude",
+      longitude: "longitude",
+      designer: "designer",
+      yearBuilt: "year_built",
+      amenities: "amenities",
+      courseRating: "course_rating",
+      slopeRating: "slope_rating",
+      id: "",
+      parTotal: "",
+      holeCount: "",
+      isActive: "",
+      holes: "",
+      createdAt: "",
+      updatedAt: "",
+    };
+
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined && key in fieldMap) {
+        updateData[fieldMap[key as keyof Course]] = value;
+      }
+    }
+
+    const { error } = await supabase
+      .from("courses")
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) {
+      throw handleSupabaseError(error, "Failed to update course");
+    }
+
+    return true;
+  } catch (err) {
+    if (err instanceof Error) throw err;
+    throw new Error("Unknown error occurred while updating course");
+  }
 };

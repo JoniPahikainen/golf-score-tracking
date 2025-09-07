@@ -1,95 +1,62 @@
-// src/hooks/useAuth.ts
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
+import { useUser } from "@/contexts/UserContext";
 
 interface ApiError {
   message: string;
   status?: number;
-  data?: any;
 }
 
 export const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
+  const [error, setError] = useState<string>("");
   const navigate = useNavigate();
+  const { user, setUser, logout: contextLogout } = useUser();
 
-  const handleApiError = (error: any): ApiError => {
-    console.error("API Error:", error);
-    if (error.response) {
-      return {
-        message: error.response.data?.message || "Request failed",
-        status: error.response.status,
-        data: error.response.data
-      };
-    }
-    return {
-      message: error.message || "Network error occurred"
-    };
-  };
-
-  const handleLogin = async (username: string, password: string) => {
-    setError(null);
+  const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
+    setError("");
 
     try {
-      const response = await api.post("/auth/login", { 
-        userName: username, 
-        password 
-      });
+      const { data } = await api.post("/auth/login", { email, password });
       
-      localStorage.setItem("token", response.data.token);
-      setIsLoggedIn(true);
+      // Store token and user data
+      localStorage.setItem("token", data.token);
+      setUser(data.user);
+      
       navigate("/app");
-    } catch (error: any) {
-      const apiError = handleApiError(error);
-      setError(apiError);
-      
-      if (apiError.status === 400) {
-        setError({
-          message: apiError.data?.error || "Invalid username or password"
-        });
-      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegister = async (username: string, password: string) => {
-    setError(null);
+  const handleRegister = async (username: string, email: string, password: string) => {
     setIsLoading(true);
+    setError("");
 
     try {
-      const response = await api.post("/auth/register", {
-        username,
-        password
-      });
+      await api.post("/auth/register", { userName: username, email, password });
       navigate("/login");
-    } catch (error: any) {
-      const apiError = handleApiError(error);
-      setError(apiError);
-
-      if (apiError.status === 404) {
-        setError({
-          message: "Registration endpoint not found. Check API URL."
-        });
-      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
+    contextLogout();
     navigate("/login");
   };
 
   return {
-    isLoggedIn,
+    isLoggedIn: !!user,
     isLoading,
     error,
+    user,
     handleLogin,
     handleRegister,
     handleLogout,
