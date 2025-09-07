@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ScoreEntry } from "@/components/golf/ScoreEntry";
 import api from "@/api/axios";
 import { useEffect, useState } from "react";
+import { useUser } from "@/contexts/UserContext";
 
 interface Player {
   id: string;
@@ -16,6 +17,7 @@ interface Player {
 export const ScoreEntryPage = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,10 +49,10 @@ export const ScoreEntryPage = () => {
                 })),
         }));
 
-        if (initializedPlayers.length === 0) {
+        if (initializedPlayers.length === 0 && user) {
           initializedPlayers.push({
-            id: Date.now().toString(),
-            name: "Player 1",
+            id: user.id,
+            name: user.userName || user.firstName || "Player",
             holes: Array.from({ length: 18 }, (_, i) => ({
               holeNumber: i + 1,
               strokes: 0,
@@ -89,6 +91,7 @@ export const ScoreEntryPage = () => {
   return (
     <ScoreEntry
       initialPlayers={players}
+      roundId={roundId!}
       onExit={() => navigate(`/app/round/${roundId}`)}
     />
   );

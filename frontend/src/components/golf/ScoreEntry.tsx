@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/api/axios";
 
 interface Hole {
   holeNumber: number;
@@ -20,6 +21,7 @@ export interface Player {
 
 interface ScoreEntryProps {
   initialPlayers: Player[];
+  roundId: string;
   onExit?: () => void;
 }
 
@@ -34,7 +36,8 @@ interface PopupProps {
 
 const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 
-export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
+export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps) => {
+  console.log("Initial players:", initialPlayers);
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
@@ -75,38 +78,37 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
   };
 
   const renderFullScorecard = (player: Player) => {
-  const rows = [player.holes.slice(0, 9), player.holes.slice(9, 18)];
-  return (
-    <div className="mt-4 space-y-2">
-      {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="grid grid-cols-9 gap-1">
-          {row.map((hole) => {
-            const strokes = hole.strokes;
-            const displayScore =
-              hole.holeNumber - 1 <= currentHoleIndex
-                ? strokes === 0
-                  ? "" // blank if 0
-                  : strokes != null
-                  ? strokes
-                  : DEFAULT_PAR[hole.holeNumber - 1]
-                : "";
-            return (
-              <div key={hole.holeNumber} className="text-center">
-                <div className="text-xs font-semibold text-gray-500">
-                  {hole.holeNumber}
+    const rows = [player.holes.slice(0, 9), player.holes.slice(9, 18)];
+    return (
+      <div className="mt-4 space-y-2">
+        {rows.map((row, rowIndex) => (
+          <div key={rowIndex} className="grid grid-cols-9 gap-1">
+            {row.map((hole) => {
+              const strokes = hole.strokes;
+              const displayScore =
+                hole.holeNumber - 1 <= currentHoleIndex
+                  ? strokes === 0
+                    ? "" // blank if 0
+                    : strokes != null
+                    ? strokes
+                    : DEFAULT_PAR[hole.holeNumber - 1]
+                  : "";
+              return (
+                <div key={hole.holeNumber} className="text-center">
+                  <div className="text-xs font-semibold text-gray-500">
+                    {hole.holeNumber}
+                  </div>
+                  <div className="border rounded p-1 text-sm min-h-[1.75rem]">
+                    {displayScore}
+                  </div>
                 </div>
-                <div className="border rounded p-1 text-sm min-h-[1.75rem]">
-                  {displayScore}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
-};
-
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const calculateCurrentScore = (player: Player) =>
     player.holes.slice(0, currentHoleIndex + 1).reduce((total, hole, i) => {
@@ -162,15 +164,14 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
 
   // New function to print player data clearly to console
   const logPlayerData = () => {
-  players.forEach((player) => {
-    console.log(`Player: ${player.name}`);
-    player.holes.forEach((hole) => {
-      const strokesDisplay = hole.strokes === 0 ? " " : hole.strokes;
-      console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
+    players.forEach((player) => {
+      console.log(`Player: ${player.name}`);
+      player.holes.forEach((hole) => {
+        const strokesDisplay = hole.strokes === 0 ? " " : hole.strokes;
+        console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
+      });
     });
-  });
-};
-
+  };
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto">
@@ -242,9 +243,30 @@ export const ScoreEntry = ({ initialPlayers, onExit }: ScoreEntryProps) => {
                     ? player.holes[currentHoleIndex].strokes
                     : DEFAULT_PAR[currentHoleIndex]
                 }
-                onSave={(newStrokes) =>
-                  updateHole(player.id, currentHoleIndex, "strokes", newStrokes)
-                }
+                onSave={async (newStrokes) => {
+                  updateHole(
+                    player.id,
+                    currentHoleIndex,
+                    "strokes",
+                    newStrokes
+                  );
+
+                  try {
+                    console.log("player: ", player)
+                    const url = `/rounds/${roundId}/score/${player.id}/${currentHoleIndex + 1}`;
+                    const payload = {
+                      strokes: newStrokes,
+                      putts: player.holes[currentHoleIndex].putts || 0,
+                    };
+
+                    console.log("PUT request to:", url);
+                    console.log("Payload being sent:", payload);
+
+                    await api.put(url, payload);
+                  } catch (err) {
+                    console.error("Error updating score:", err);
+                  }
+                }}
                 onClose={() => setPopup({ playerId: null })}
               />
             )}
