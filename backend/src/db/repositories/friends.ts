@@ -100,7 +100,7 @@ export const getFriendRequests = async (userId: string, status?: string): Promis
 export const getFriendsList = async (userId: string): Promise<any[]> => {
     try {
         const { data, error } = await supabase
-            .from('friendships')
+            .from('friends')
             .select('friend_id')
             .eq('user_id', userId);
         if (error) {
@@ -115,14 +115,16 @@ export const getFriendsList = async (userId: string): Promise<any[]> => {
 export const removeFriend = async (userId: string, friendId: string): Promise<void> => {
     try {
         const { error: deleteError } = await supabase
-            .from('friendships')
+            .from("friends")
             .delete()
-            .or(`(user_id.eq.${userId}.and.friend_id.eq.${friendId}),(user_id.eq.${friendId}.and.friend_id.eq.${userId})`);
+            .or(
+                `and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`
+            );
 
         if (deleteError) {
             throw new Error(`Failed to remove friend: ${deleteError.message}`);
         }
     } catch (error) {
-        throw new Error(error instanceof Error ? error.message : 'Unknown error removing friend');
+        throw new Error(error instanceof Error ? error.message : "Unknown error removing friend");
     }
 };
