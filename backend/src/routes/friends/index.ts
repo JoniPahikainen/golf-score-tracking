@@ -51,7 +51,7 @@ router.get('/:userId/friend-requests', async (req, res) => {
     if (!userId) {
     return res.status(400).json({ success: false, error: 'User ID is required' });
     }
-    try {   
+    try {
     const requests = await getFriendRequests(userId, status as string | undefined);
     return res.json({ success: true, data: requests });
     } catch (error) {

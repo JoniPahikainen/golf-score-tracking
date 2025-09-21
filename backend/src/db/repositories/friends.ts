@@ -30,7 +30,6 @@ export const addFriend = async (userId: string, friendId: string): Promise<void>
   }
 };
 
-
 export const acceptFriendRequest = async (
   userId: string,
   friendId: string
@@ -91,7 +90,7 @@ export const getFriendRequests = async (
     let query = supabase
       .from("friend_requests")
       .select("*")
-      .or(`(sender_id.eq.${userId}),(receiver_id.eq.${userId})`);
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
 
     if (status) {
       query = query.eq("status", status);
@@ -102,7 +101,6 @@ export const getFriendRequests = async (
     if (error) {
       throw new Error(`Failed to fetch friend requests: ${error.message}`);
     }
-
     return data || [];
   } catch (error) {
     throw new Error(
@@ -114,22 +112,22 @@ export const getFriendRequests = async (
 };
 
 export const getFriendsList = async (userId: string): Promise<any[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("friends")
-      .select("friend_id")
-      .eq("user_id", userId);
-    if (error) {
-      throw new Error(`Failed to fetch friends list: ${error.message}`);
-    }
-    return data || [];
-  } catch (error) {
-    throw new Error(
-      error instanceof Error
-        ? error.message
-        : "Unknown error fetching friends list"
-    );
-  }
+  const { data, error } = await supabase
+    .from("friends")
+    .select(`
+      friend_id,
+      users:friend_id (
+        id,
+        user_name,
+        first_name,
+        last_name,
+        profile_picture_url
+      )
+    `)
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`Failed to fetch friends list: ${error.message}`);
+  return data || [];
 };
 
 export const removeFriend = async (
