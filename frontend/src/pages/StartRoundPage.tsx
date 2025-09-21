@@ -1,12 +1,15 @@
-import { StartRound } from "@/components/golf/StartRound";
+import { BasicPlayer, StartRound } from "@/components/golf/StartRound";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
 import { useEffect, useState } from "react";
+import { useUser } from "@/contexts/UserContext";
 
 export const StartRoundPage = () => {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [teeSets, setTeeSets] = useState<TeeSet[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [friends, setFriends] = useState<BasicPlayer[]>([]);
   const [isLoadingTees, setIsLoadingTees] = useState(false);
 
   useEffect(() => {
@@ -14,12 +17,31 @@ export const StartRoundPage = () => {
       try {
         const coursesResponse = await api.get("/courses");
         setCourses(coursesResponse.data.data || []);
+        
+        // Fetch friends if user is available
+        if (user?.id) {
+          const friendsResponse = await api.get(`/friends/${user.id}`);
+          const friendsData = friendsResponse.data.data || [];
+          // Transform friends data to BasicPlayer format
+          const transformedFriends = friendsData.map((friend: any) => {
+            const friendUser = friend.users;
+            const name = friendUser?.first_name && friendUser?.last_name 
+              ? `${friendUser.first_name} ${friendUser.last_name}`
+              : friendUser?.user_name || `Friend ${friend.friend_id.slice(-4)}`;
+            
+            return {
+              id: friend.friend_id,
+              name: name
+            };
+          });
+          setFriends(transformedFriends);
+        }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching initial data:", error);
       }
     };
     fetchInitialData();
-  }, []);
+  }, [user]);
 
   const fetchTeesForCourse = async (courseId: string) => {
     setIsLoadingTees(true);
@@ -44,6 +66,8 @@ export const StartRoundPage = () => {
     try {
       const selectedTee = teeSets.find(tee => tee.id === roundData.teeId);
       const teeColor = selectedTee?.color || 'white';
+
+      console.log("Starting round with data:", roundData, "Tee color:", teeColor);
 
 
       const response = await api.post("/rounds", {
@@ -70,6 +94,7 @@ export const StartRoundPage = () => {
         tees={teeSets}
         courses={courses}
         onCourseSelect={fetchTeesForCourse}
+        friends={friends}
         isLoadingTees={isLoadingTees}
       />
     </div>
@@ -91,9 +116,4 @@ interface TeeSet {
     length: number;
     par: number;
   }[];
-}
-
-interface BasicPlayer {
-  id: string;
-  name: string;
 }

@@ -41,6 +41,7 @@ interface StartRoundProps {
     courseId: string;
     teeId: string;
     date: Date;
+    friends: BasicPlayer[];
     title?: string;
   }) => void;
   tees: {
@@ -52,9 +53,10 @@ interface StartRoundProps {
   courses: Course[];
   onCourseSelect: (courseId: string) => void;
   isLoadingTees: boolean;
+  friends: BasicPlayer[];
 }
 
-export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoundProps) => {
+export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTees, friends }: StartRoundProps) => {
   const { user } = useUser();
   const [players, setPlayers] = useState<BasicPlayer[]>([]);
   const [newName, setNewName] = useState("");
@@ -62,7 +64,6 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
   const [selectedTee, setSelectedTee] = useState<string>("");
   const [roundDate, setRoundDate] = useState<Date>(new Date());
   const [roundTitle, setRoundTitle] = useState("");
-  const [isLoadingTees, setIsLoadingTees] = useState(false);
 
   // Initialize with current user as first player
   useEffect(() => {
@@ -80,17 +81,10 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
     setSelectedCourse(courseId);
     setSelectedTee("");
     if (courseId) {
-      setIsLoadingTees(true);
       onCourseSelect(courseId);
-      setIsLoadingTees(false);
     }
   };
 
-  const friends: BasicPlayer[] = [
-    { id: "f1", name: "Alice Johnson" },
-    { id: "f2", name: "Bob Smith" },
-    { id: "f3", name: "Charlie Lee" },
-  ];
 
   const addPlayer = (player: BasicPlayer) => {
     setPlayers([...players, player]);
@@ -111,6 +105,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
       courseId: selectedCourse,
       teeId: selectedTee,
       date: roundDate,
+      friends,
       title: roundTitle || undefined,
     });
   };
@@ -222,6 +217,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
           <AddPlayerDialog
             onAddPlayer={addPlayer}
             existingPlayers={players}
+            friends={friends}
             trigger={
               <Button
                 size="sm"
@@ -275,7 +271,5 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
         Start Round
       </Button>
     </div>
-
-
   );
 };

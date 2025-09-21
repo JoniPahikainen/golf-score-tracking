@@ -22,19 +22,15 @@ import { BasicPlayer } from "./StartRound";
 interface AddPlayerDialogProps {
   onAddPlayer: (player: BasicPlayer) => void;
   existingPlayers: BasicPlayer[];
+  friends: BasicPlayer[];
   trigger: React.ReactNode;
 }
 
-export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, trigger }: AddPlayerDialogProps) => {
+export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger }: AddPlayerDialogProps) => {
   const [addMode, setAddMode] = useState<"friend" | "guest">("guest");
   const [newName, setNewName] = useState("");
   const [selectedFriend, setSelectedFriend] = useState<string>("");
 
-  const friends: BasicPlayer[] = [
-    { id: "f1", name: "Alice Johnson" },
-    { id: "f2", name: "Bob Smith" },
-    { id: "f3", name: "Charlie Lee" },
-  ];
 
   const addPlayer = () => {
     if (addMode === "guest") {
