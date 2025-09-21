@@ -170,7 +170,7 @@ export const RoundDetailsPage = () => {
   return (
     <div className="space-y-6 p-4 md:p-8 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 dark:text-gray-300">
         <Button
           variant="outline"
           size="sm"
@@ -178,7 +178,7 @@ export const RoundDetailsPage = () => {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Rounds
+          Back
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -191,9 +191,9 @@ export const RoundDetailsPage = () => {
       </div>
 
       {/* Round Info */}
-      <Card className="shadow-md rounded-2xl">
+      <Card className="shadow-md rounded-2xl dark:outline dark:outline-gray-700">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg dark:text-gray-300">
             <MapPin className="h-5 w-5 text-blue-500" />
             Round Information
           </CardTitle>
@@ -229,9 +229,9 @@ export const RoundDetailsPage = () => {
       </Card>
 
       {/* Player Scores */}
-      <Card className="shadow-md rounded-2xl">
+      <Card className="shadow-md rounded-2xl dark:outline dark:outline-gray-700">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg dark:text-gray-300">
             <Trophy className="h-5 w-5 text-yellow-500" />
             Player Scores
           </CardTitle>
@@ -268,9 +268,9 @@ export const RoundDetailsPage = () => {
       </Card>
 
       {/* Hole-by-Hole Scores */}
-      <Card className="shadow-md rounded-2xl">
+      <Card className="shadow-md rounded-2xl dark:outline dark:outline-gray-700">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Hole-by-Hole Scores</CardTitle>
+          <CardTitle className="text-lg dark:text-gray-300">Hole-by-Hole Scores</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
