@@ -69,7 +69,6 @@ export const StartRoundPage = () => {
 
       console.log("Starting round with data:", roundData, "Tee color:", teeColor);
 
-
       const response = await api.post("/rounds", {
         courseId: roundData.courseId,
         teeName: teeColor.charAt(0).toUpperCase() + teeColor.slice(1),

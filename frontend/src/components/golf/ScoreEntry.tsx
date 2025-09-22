@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 import api from "@/api/axios";
 
 interface Hole {
@@ -37,7 +38,7 @@ interface PopupProps {
 const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 
 export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps) => {
-  console.log("Initial players:", initialPlayers);
+  const { user } = useUser();
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
@@ -77,39 +78,6 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
     });
   };
 
-  const renderFullScorecard = (player: Player) => {
-    const rows = [player.holes.slice(0, 9), player.holes.slice(9, 18)];
-    return (
-      <div className="mt-4 space-y-2">
-        {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid grid-cols-9 gap-1">
-            {row.map((hole) => {
-              const strokes = hole.strokes;
-              const displayScore =
-                hole.holeNumber - 1 <= currentHoleIndex
-                  ? strokes === 0
-                    ? "" // blank if 0
-                    : strokes != null
-                    ? strokes
-                    : DEFAULT_PAR[hole.holeNumber - 1]
-                  : "";
-              return (
-                <div key={hole.holeNumber} className="text-center">
-                  <div className="text-xs font-semibold text-gray-500">
-                    {hole.holeNumber}
-                  </div>
-                  <div className="border rounded p-1 text-sm min-h-[1.75rem]">
-                    {displayScore}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   const calculateCurrentScore = (player: Player) =>
     player.holes.slice(0, currentHoleIndex + 1).reduce((total, hole, i) => {
       const strokes = hole.strokes || DEFAULT_PAR[i];
@@ -132,24 +100,28 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white text-black rounded-xl p-6 text-center shadow-md w-72 space-y-4">
-          <h2 className="text-lg font-bold">
+        <div className="bg-slate-800 text-gray-50 rounded-xl p-6 text-center shadow-md w-72 space-y-4">
+          <h2 className="text-xl font-bold">
             {player.name} – Hole {holeIndex + 1}
           </h2>
-          <div className="text-sm text-muted-foreground">Par {par}</div>
+          <div className="text-sm text-gray-400">Par {par}</div>
           <div className="flex items-center justify-between">
             <Button
+              className="rounded-full bg-slate-700 text-gray-50 hover:bg-slate-600"
               onClick={() => setPopupStrokes((prev) => Math.max(0, prev - 1))}
             >
-              -1
+              <ChevronLeft size={20} />
             </Button>
-            <div className="text-2xl">{popupStrokes}</div>
-            <Button onClick={() => setPopupStrokes((prev) => prev + 1)}>
-              +1
+            <div className="text-4xl font-semibold">{popupStrokes}</div>
+            <Button
+              className="rounded-full bg-slate-700 text-gray-50 hover:bg-slate-600"
+              onClick={() => setPopupStrokes((prev) => prev + 1)}
+            >
+              <ChevronRight size={20} />
             </Button>
           </div>
           <Button
-            variant="outline"
+            className="w-full bg-blue-600 text-white hover:bg-blue-700"
             onClick={() => {
               onSave(popupStrokes);
               onClose();
@@ -162,38 +134,132 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
     );
   };
 
-  // New function to print player data clearly to console
+  const renderFullScorecard = (player: Player) => {
+    const holeNumbers = Array.from({ length: 18 }, (_, i) => i + 1);
+    const parNumbers = DEFAULT_PAR;
+
+    const renderScoreCell = (hole: Hole, index: number) => {
+      const strokes = hole.strokes;
+      const displayScore =
+        index <= currentHoleIndex
+          ? strokes === 0
+            ? ""
+            : strokes != null
+            ? strokes
+            : DEFAULT_PAR[index]
+          : "";
+      const isCurrentHole = index === currentHoleIndex;
+      const scoreDiff = strokes - DEFAULT_PAR[index];
+      let scoreColorClass = 'text-gray-50';
+
+      if (strokes > 0) {
+        if (scoreDiff < 0) scoreColorClass = 'text-green-400';
+        else if (scoreDiff > 0) scoreColorClass = 'text-red-400';
+      }
+
+      return (
+        <div
+          key={hole.holeNumber}
+          className={`flex-1 text-center py-2 transition-colors duration-200 ${isCurrentHole ? "bg-slate-700 rounded" : ""}`}
+        >
+          <div className="text-xs font-light text-gray-400">
+            {hole.holeNumber}
+          </div>
+          <div className={`text-sm font-semibold ${scoreColorClass}`}>
+            {displayScore}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="mt-4 space-y-4">
+        <div className="grid grid-cols-10 gap-1 text-center font-bold text-gray-400">
+          <div className="col-span-1"></div>
+          {holeNumbers.slice(0, 9).map((num) => (
+            <div key={num} className="col-span-1">
+              {num}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-10 gap-1 text-center">
+          <div className="col-span-1 font-bold text-gray-400">Par</div>
+          {parNumbers.slice(0, 9).map((par, i) => (
+            <div key={i} className="col-span-1 text-sm text-gray-200">
+              {par}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-10 gap-1 text-center">
+          <div className="col-span-1 font-bold text-gray-400">Score</div>
+          {player.holes.slice(0, 9).map((hole, i) => (
+            <div key={i} className="col-span-1">
+              {renderScoreCell(hole, i)}
+            </div>
+          ))}
+        </div>
+        <hr className="border-slate-700" />
+        <div className="grid grid-cols-10 gap-1 text-center font-bold text-gray-400">
+          <div className="col-span-1"></div>
+          {holeNumbers.slice(9, 18).map((num) => (
+            <div key={num} className="col-span-1">
+              {num}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-10 gap-1 text-center">
+          <div className="col-span-1 font-bold text-gray-400">Par</div>
+          {parNumbers.slice(9, 18).map((par, i) => (
+            <div key={i} className="col-span-1 text-sm text-gray-200">
+              {par}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-10 gap-1 text-center">
+          <div className="col-span-1 font-bold text-gray-400">Score</div>
+          {player.holes.slice(9, 18).map((hole, i) => (
+            <div key={i} className="col-span-1">
+              {renderScoreCell(hole, i + 9)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const logPlayerData = () => {
     players.forEach((player) => {
       console.log(`Player: ${player.name}`);
       player.holes.forEach((hole) => {
         const strokesDisplay = hole.strokes === 0 ? " " : hole.strokes;
-        console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
+        console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
       });
     });
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-md mx-auto">
+    <div className="bg-slate-900 text-gray-50 min-h-screen p-4 space-y-6">
       {/* Back Button */}
       {onExit && (
-        <Button variant="ghost" onClick={onExit}>
+        <Button variant="ghost" onClick={onExit} className="text-gray-400 hover:text-gray-50">
           ← Back to Start
         </Button>
       )}
 
       {/* Hole Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl shadow-lg">
         <Button
           variant="ghost"
           onClick={() => setCurrentHoleIndex((i) => Math.max(0, i - 1))}
+          className="rounded-full h-10 w-10 p-0 text-gray-400 hover:text-gray-50"
         >
           <ChevronLeft />
         </Button>
-        <div className="font-bold text-lg">Hole {currentHoleIndex + 1}</div>
+        <div className="font-bold text-2xl text-gray-50">Hole {currentHoleIndex + 1}</div>
         <Button
           variant="ghost"
           onClick={() => setCurrentHoleIndex((i) => Math.min(17, i + 1))}
+          className="rounded-full h-10 w-10 p-0 text-gray-400 hover:text-gray-50"
         >
           <ChevronRight />
         </Button>
@@ -203,32 +269,41 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
       {players.map((player) => {
         const hole = player.holes[currentHoleIndex];
         const score = calculateCurrentScore(player);
+        const scoreDisplay = score > 0 ? `+${score}` : score === 0 ? 'E' : score;
+        const currentHoleStrokes = hole.strokes > 0 ? hole.strokes : "-";
+        
         return (
           <Card
             key={player.id}
-            className="p-4 cursor-pointer"
+            className="p-4 bg-slate-800 text-gray-50 rounded-xl shadow-lg cursor-pointer transition-transform duration-200 hover:scale-[1.01]"
             onClick={(e) => {
               if ((e.target as HTMLElement).closest("button")) return;
               toggleExpanded(player.id);
             }}
           >
             <div className="flex justify-between items-center">
-              <div>
-                <div className="font-medium">{player.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  Score: {score > 0 ? `+${score}` : score} (
-                  {hole.strokes || "0"})
-                </div>
+              <div className="flex items-center gap-3">
+                <div className="font-bold text-lg text-gray-50">{player.name}</div>
+                {player.id !== user?.id && (
+                  <span className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full font-medium">
+                    Friend
+                  </span>
+                )}
               </div>
-              <Button
-                className="rounded-full h-10 w-10 p-0 flex items-center justify-center text-base"
-                variant="outline"
-                onClick={() => setPopup({ playerId: player.id })}
-              >
-                {hole.strokes > 0
-                  ? hole.strokes
-                  : DEFAULT_PAR[currentHoleIndex]}
-              </Button>
+              <div className="flex items-center gap-4">
+                <div className="text-sm font-medium text-gray-400">
+                  <span className="font-bold text-gray-50">Score:</span> {scoreDisplay}
+                </div>
+                <Button
+                  className="rounded-full h-12 w-12 p-0 flex items-center justify-center text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevents card expansion
+                    setPopup({ playerId: player.id });
+                  }}
+                >
+                  {currentHoleStrokes}
+                </Button>
+              </div>
             </div>
 
             {expandedPlayerIds.has(player.id) && renderFullScorecard(player)}
@@ -238,7 +313,6 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
                 holeIndex={currentHoleIndex}
                 par={DEFAULT_PAR[currentHoleIndex]}
                 initialStrokes={
-                  player.holes[currentHoleIndex].strokes &&
                   player.holes[currentHoleIndex].strokes > 0
                     ? player.holes[currentHoleIndex].strokes
                     : DEFAULT_PAR[currentHoleIndex]
@@ -252,19 +326,16 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
                   );
 
                   try {
-                    console.log("player: ", player)
                     const url = `/rounds/${roundId}/score/${player.id}/${currentHoleIndex + 1}`;
                     const payload = {
                       strokes: newStrokes,
                       putts: player.holes[currentHoleIndex].putts || 0,
                     };
-
-                    console.log("PUT request to:", url);
-                    console.log("Payload being sent:", payload);
-
                     await api.put(url, payload);
+                    toast({ title: "Score updated!", description: `Hole ${currentHoleIndex + 1} for ${player.name} saved.`, });
                   } catch (err) {
                     console.error("Error updating score:", err);
+                    toast({ title: "Error", description: "Failed to save score.", variant: "destructive" });
                   }
                 }}
                 onClose={() => setPopup({ playerId: null })}
@@ -278,6 +349,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
       <div className="flex justify-between pt-2 space-x-2">
         <Button
           variant="outline"
+          className="bg-slate-800 text-gray-400 border-slate-700 hover:bg-slate-700 hover:text-gray-50"
           onClick={() =>
             setPlayers(
               players.map((p) => ({
@@ -295,37 +367,13 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
         >
           Reset All
         </Button>
-
         <Button
+          className="bg-green-600 text-white hover:bg-green-700"
           onClick={() => {
             toast({ title: "Scores saved!" });
-            console.log("Final Scores:");
-            players.forEach((player) => {
-              let totalStrokes = 0;
-              let totalPar = 0;
-              console.log(`\n${player.name}`);
-              player.holes.forEach((hole, i) => {
-                const strokes = hole.strokes || DEFAULT_PAR[i];
-                totalStrokes += strokes;
-                totalPar += DEFAULT_PAR[i];
-                console.log(`  Hole ${i + 1}: ${strokes} (${DEFAULT_PAR[i]})`);
-              });
-              const scoreRelative = totalStrokes - totalPar;
-              const scoreStr =
-                scoreRelative === 0
-                  ? "0"
-                  : scoreRelative > 0
-                  ? `+${scoreRelative}`
-                  : `${scoreRelative}`;
-              console.log(`  Total: ${totalStrokes} (${scoreStr})`);
-            });
           }}
         >
           Save All
-        </Button>
-
-        <Button variant="outline" onClick={logPlayerData}>
-          Print Data to Console
         </Button>
       </div>
     </div>
