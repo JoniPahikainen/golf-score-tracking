@@ -289,6 +289,25 @@ export const deleteRound = async (id: string): Promise<boolean> => {
   }
 };
 
+export const finishRound = async (roundId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("rounds")
+      .update({
+        status: "completed",
+        updated_at: new Date(),
+      })
+      .eq("id", roundId);
+
+    if (error) throw handleSupabaseError(error, "Failed to finish round");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error finishing round");
+  }
+};
+
+
 export const getRoundsByUserId = async (
   userId: string,
   limit?: number

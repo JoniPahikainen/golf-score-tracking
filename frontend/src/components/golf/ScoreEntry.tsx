@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
 
 interface Hole {
@@ -41,6 +42,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
   const { user } = useUser();
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
+  const navigate = useNavigate();
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
     new Set()
   );
@@ -67,6 +69,17 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
           : p
       )
     );
+  };
+
+  const save = async () => {
+    try {
+      await api.put(`/rounds/${roundId}/finish`);
+      toast({ title: "Scores saved!" });
+      navigate("/app");
+    } catch (error) {
+      console.error("Error finishing round:", error);
+      toast({ title: "Error", description: "Failed to finish round.", variant: "destructive" });
+    }
   };
 
   const toggleExpanded = (playerId: string) => {
@@ -297,7 +310,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
                 <Button
                   className="rounded-full h-12 w-12 p-0 flex items-center justify-center text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevents card expansion
+                    e.stopPropagation();
                     setPopup({ playerId: player.id });
                   }}
                 >
@@ -369,9 +382,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
         </Button>
         <Button
           className="bg-green-600 text-white hover:bg-green-700"
-          onClick={() => {
-            toast({ title: "Scores saved!" });
-          }}
+          onClick={() => save()}
         >
           Save All
         </Button>
