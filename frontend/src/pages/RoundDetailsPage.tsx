@@ -104,6 +104,20 @@ export const RoundDetailsPage = () => {
     return "bg-red-500";
   };
 
+  const getScoreDifferenceClass = (strokes: number, par: number) => {
+    const difference = strokes - par;
+
+    if (difference <= -2)
+      return "text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded";
+    if (difference === -1)
+      return "text-green-600 dark:text-green-400 font-semibold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded";
+    if (difference === 0)
+      return "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 px-2 py-1 rounded";
+    if (difference === 1)
+      return "text-yellow-600 dark:text-yellow-400 font-semibold bg-yellow-50 dark:bg-yellow-900/30 px-2 py-1 rounded";
+    return "text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded";
+  };
+
   const getPlayerName = (userId: string) => {
     const player = players.find((p) => p.id === userId);
     if (player) {
@@ -255,58 +269,273 @@ export const RoundDetailsPage = () => {
       {/* Hole-by-Hole Scores */}
       <Card className="shadow-md rounded-2xl dark:outline dark:outline-gray-700">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg dark:text-gray-300">
-            Hole-by-Hole Scores
+          <CardTitle className="text-lg flex items-center gap-2 dark:text-gray-300">
+            <Target className="h-5 w-5 text-indigo-500" />
+            Scorecard Details
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
+            <table className="w-full border-separate border-spacing-y-1">
+              <thead className="sticky top-0 z-10 bg-white dark:bg-gray-900">
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-2 px-3 text-sm font-medium text-gray-600 dark:text-gray-300">
-                    Hole
+                  <th className="sticky left-0 bg-white dark:bg-gray-900 text-left py-2 px-3 text-xs md:text-sm font-medium text-gray-600 dark:text-gray-300 min-w-[100px] z-20">
+                    HOLE
                   </th>
                   {round.players.map((player) => (
                     <th
                       key={player.userId}
-                      className="text-center py-2 px-3 text-sm font-medium text-gray-600 dark:text-gray-300"
+                      className="text-center py-2 px-3 text-xs md:text-sm font-medium text-gray-800 dark:text-white min-w-[80px]"
                     >
-                      {getPlayerName(player.userId)}
+                      {getPlayerName(player.userId).split(" ")[0]}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {holes.map((hole) => (
+                {/* Front 9 Holes */}
+                {holes.slice(0, 9).map((hole, index) => (
                   <tr
                     key={hole.holeNumber}
-                    className="border-b border-gray-100 dark:border-gray-800"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <td className="py-2 px-3 text-sm font-medium text-gray-900 dark:text-white">
-                      {hole.holeNumber} (Par {hole.par})
+                    <td className="sticky left-0 bg-white dark:bg-gray-900 py-2 px-3 text-sm font-medium text-gray-900 dark:text-white border-r dark:border-gray-700 z-10">
+                      <span className="font-bold">{hole.holeNumber}</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs">
+                        {" "}
+                        (Par {hole.par})
+                      </span>
                     </td>
                     {round.players.map((player) => {
                       const score = player.scores?.find(
                         (s) => s.holeNumber === hole.holeNumber
                       );
+                      const strokes = score?.strokes || 0;
+                      const par = hole.par || 4;
+
                       return (
                         <td
                           key={player.userId}
                           className="text-center py-2 px-3 text-sm text-gray-900 dark:text-white"
                         >
-                          {score
-                            ? `${score.strokes}${
-                                score.putts ? ` (${score.putts})` : ""
-                              }`
-                            : "-"}
+                          {strokes > 0 ? (
+                            <div
+                              className={`inline-flex items-center justify-center ${getScoreDifferenceClass(
+                                strokes,
+                                par
+                              )}`}
+                            >
+                              {strokes}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                       );
                     })}
                   </tr>
                 ))}
+
+                {/* OUT (Front 9) Summary */}
+                <tr className="bg-blue-50 dark:bg-blue-900/50 border-y-2 border-blue-200 dark:border-blue-800 font-semibold">
+                  <td className="sticky left-0 bg-blue-50 dark:bg-blue-900/50 py-2 px-3 text-sm font-extrabold text-blue-700 dark:text-blue-300 border-r dark:border-blue-800 z-10">
+                    OUT
+                  </td>
+                  {round.players.map((player) => {
+                    const frontNineScores =
+                      player.scores?.filter((s) => s.holeNumber <= 9) || [];
+                    const totalStrokes = frontNineScores.reduce(
+                      (sum, s) => sum + (s.strokes || 0),
+                      0
+                    );
+                    const frontNinePar = holes
+                      .slice(0, 9)
+                      .reduce((sum, hole) => sum + hole.par, 0);
+                    const relativeToPar = totalStrokes - frontNinePar;
+
+                    return (
+                      <td key={player.userId} className="text-center py-2 px-3">
+                        <div className="flex flex-col items-center">
+                          <span className="text-base font-bold text-blue-700 dark:text-blue-300">
+                            {totalStrokes > 0 ? totalStrokes : "-"}
+                          </span>
+                          {totalStrokes > 0 && (
+                            <span
+                              className={`text-xs ${
+                                relativeToPar > 0
+                                  ? "text-red-500"
+                                  : relativeToPar < 0
+                                  ? "text-green-500"
+                                  : "text-blue-500"
+                              }`}
+                            >
+                              {relativeToPar > 0
+                                ? `+${relativeToPar}`
+                                : relativeToPar}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Back 9 Holes */}
+                {holes.slice(9, 18).map((hole, index) => (
+                  <tr
+                    key={hole.holeNumber}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <td className="sticky left-0 bg-white dark:bg-gray-900 py-2 px-3 text-sm font-medium text-gray-900 dark:text-white border-r dark:border-gray-700 z-10">
+                      <span className="font-bold">{hole.holeNumber}</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs">
+                        {" "}
+                        (Par {hole.par})
+                      </span>
+                    </td>
+                    {round.players.map((player) => {
+                      const score = player.scores?.find(
+                        (s) => s.holeNumber === hole.holeNumber
+                      );
+                      const strokes = score?.strokes || 0;
+                      const par = hole.par || 4;
+
+                      return (
+                        <td
+                          key={player.userId}
+                          className="text-center py-2 px-3 text-sm text-gray-900 dark:text-white"
+                        >
+                          {strokes > 0 ? (
+                            <div
+                              className={`inline-flex items-center justify-center ${getScoreDifferenceClass(
+                                strokes,
+                                par
+                              )}`}
+                            >
+                              {strokes}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* IN (Back 9) Summary */}
+                <tr className="bg-blue-50 dark:bg-blue-900/50 border-y-2 border-blue-200 dark:border-blue-800 font-semibold">
+                  <td className="sticky left-0 bg-blue-50 dark:bg-blue-900/50 py-2 px-3 text-sm font-extrabold text-blue-700 dark:text-blue-300 border-r dark:border-blue-800 z-10">
+                    IN
+                  </td>
+                  {round.players.map((player) => {
+                    const backNineScores =
+                      player.scores?.filter(
+                        (s) => s.holeNumber >= 10 && s.holeNumber <= 18
+                      ) || [];
+                    const totalStrokes = backNineScores.reduce(
+                      (sum, s) => sum + (s.strokes || 0),
+                      0
+                    );
+                    const backNinePar = holes
+                      .slice(9, 18)
+                      .reduce((sum, hole) => sum + hole.par, 0);
+                    const relativeToPar = totalStrokes - backNinePar;
+
+                    return (
+                      <td key={player.userId} className="text-center py-2 px-3">
+                        <div className="flex flex-col items-center">
+                          <span className="text-base font-bold text-blue-700 dark:text-blue-300">
+                            {totalStrokes > 0 ? totalStrokes : "-"}
+                          </span>
+                          {totalStrokes > 0 && (
+                            <span
+                              className={`text-xs ${
+                                relativeToPar > 0
+                                  ? "text-red-500"
+                                  : relativeToPar < 0
+                                  ? "text-green-500"
+                                  : "text-blue-500"
+                              }`}
+                            >
+                              {relativeToPar > 0
+                                ? `+${relativeToPar}`
+                                : relativeToPar}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* TOTAL Row */}
+                <tr className="bg-gray-200 dark:bg-gray-700/80 border-t-2 border-gray-400 dark:border-gray-500">
+                  <td className="sticky left-0 bg-gray-200 dark:bg-gray-700/80 py-2 px-3 text-lg font-extrabold text-gray-800 dark:text-white border-r dark:border-gray-500 z-10">
+                    TOTAL
+                  </td>
+                  {round.players.map((player) => {
+                    const playerTotalScore = player.totalScore || 0;
+                    const totalPar = holes.reduce(
+                      (sum, hole) => sum + hole.par,
+                      0
+                    );
+                    const relativeToPar = playerTotalScore - totalPar;
+
+                    return (
+                      <td key={player.userId} className="text-center py-2 px-3">
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-extrabold text-gray-800 dark:text-white">
+                            {playerTotalScore > 0 ? playerTotalScore : "-"}
+                          </span>
+                          {playerTotalScore > 0 && (
+                            <span
+                              className={`text-sm font-semibold ${
+                                relativeToPar > 0
+                                  ? "text-red-500"
+                                  : relativeToPar < 0
+                                  ? "text-green-500"
+                                  : "text-blue-500"
+                              }`}
+                            >
+                              {relativeToPar > 0
+                                ? `+${relativeToPar}`
+                                : relativeToPar}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Score Legend */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span>Eagle or better</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span>Birdie</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                <span>Par</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span>Bogey</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span>Double Bogey or worse</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
