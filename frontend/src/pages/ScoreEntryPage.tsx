@@ -3,22 +3,13 @@ import { ScoreEntry } from "@/components/golf/ScoreEntry";
 import api from "@/api/axios";
 import { useEffect, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
-
-interface Player {
-  id: string;
-  name: string;
-  holes: Array<{
-    holeNumber: number;
-    strokes: number;
-    putts: number;
-  }>;
-}
+import { ScoreUser as User } from "@/types";
 
 export const ScoreEntryPage = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [players, setPlayers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
 
@@ -37,7 +28,9 @@ export const ScoreEntryPage = () => {
           roundPlayers.map(async (player: any) => {
             const holes = Array.from({ length: 18 }, (_, i) => {
               const holeNumber = i + 1;
-              const score = player.scores?.find((s: any) => s.holeNumber === holeNumber);
+              const score = player.scores?.find(
+                (s: any) => s.holeNumber === holeNumber
+              );
               return {
                 holeNumber: holeNumber,
                 strokes: score?.strokes || 0,
@@ -52,12 +45,16 @@ export const ScoreEntryPage = () => {
               const userResponse = await api.get(`/users/${player.userId}`);
               if (userResponse.data.success && userResponse.data.data) {
                 const userData = userResponse.data.data;
-                playerName = userData.firstName && userData.lastName 
-                  ? `${userData.firstName} ${userData.lastName}`
-                  : userData.userName || playerName;
+                playerName =
+                  userData.firstName && userData.lastName
+                    ? `${userData.firstName} ${userData.lastName}`
+                    : userData.userName || playerName;
               }
             } catch (error) {
-              console.warn(`Could not fetch user info for ${player.userId}:`, error);
+              console.warn(
+                `Could not fetch user info for ${player.userId}:`,
+                error
+              );
             }
 
             return {
@@ -95,7 +92,7 @@ export const ScoreEntryPage = () => {
     fetchRoundData();
   }, [roundId, navigate]);
 
-  const handleSave = async (playersData: Player[]) => {
+  const handleSave = async (playersData: User[]) => {
     try {
       await api.put(`/rounds/${roundId}/scores`, { players: playersData });
       navigate(`/app/round/${roundId}`);
@@ -105,12 +102,18 @@ export const ScoreEntryPage = () => {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="text-lg">Loading round data...</div>
-        {isLoadingPlayers && <div className="text-sm text-gray-500 mt-2">Fetching player information...</div>}
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-lg">Loading round data...</div>
+          {isLoadingPlayers && (
+            <div className="text-sm text-gray-500 mt-2">
+              Fetching player information...
+            </div>
+          )}
+        </div>
       </div>
-    </div>;
+    );
   }
 
   return (

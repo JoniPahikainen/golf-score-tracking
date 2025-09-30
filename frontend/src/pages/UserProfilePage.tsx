@@ -19,19 +19,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
 import api from "@/api/axios";
 import { cn } from "@/lib/utils";
+import { Round } from "@/types";
 
-interface UserStatistics {
+export interface UserStatistics {
   totalRounds: number;
   bestScore: number;
   averageScore: number;
-}
-
-interface Round {
-  id: string;
-  players: Array<{
-    userId: string;
-    totalScore: number;
-  }>;
 }
 
 export const UserProfile = () => {
@@ -51,7 +44,6 @@ export const UserProfile = () => {
   });
   const { toast } = useToast();
 
-  // Fetch user statistics
   useEffect(() => {
     const fetchUserStatistics = async () => {
       if (!user?.id) return;
@@ -99,7 +91,6 @@ export const UserProfile = () => {
     fetchUserStatistics();
   }, [user?.id, toast]);
 
-  // Update edit data when user changes
   useEffect(() => {
     if (user) {
       setEditData({
@@ -122,7 +113,6 @@ export const UserProfile = () => {
       });
 
       if (response.data.success) {
-        // Update user context with new data
         setUser({
           ...user,
           userName: editData.userName,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X, Calendar, Plus, User } from "lucide-react";
+import { X, Calendar, Plus, User as UserIcon } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import {
   Select,
@@ -18,30 +18,15 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { AddPlayerDialog } from "./AddPlayerDialog";
-
-export interface BasicPlayer {
-  id: string;
-  name: string;
-}
-
-interface Course {
-  id: string;
-  name: string;
-}
-
-interface Tee {
-  id: string;
-  name: string;
-  courseId: string;
-}
+import { User, Course } from "@/types";
 
 interface StartRoundProps {
   onStart: (data: {
-    players: BasicPlayer[];
+    players: User[];
     courseId: string;
     teeId: string;
     date: Date;
-    friends: BasicPlayer[];
+    friends: User[];
     title?: string;
   }) => void;
   tees: {
@@ -53,12 +38,12 @@ interface StartRoundProps {
   courses: Course[];
   onCourseSelect: (courseId: string) => void;
   isLoadingTees: boolean;
-  friends: BasicPlayer[];
+  friends: User[];
 }
 
 export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTees, friends }: StartRoundProps) => {
   const { user } = useUser();
-  const [players, setPlayers] = useState<BasicPlayer[]>([]);
+  const [players, setPlayers] = useState<User[]>([]);
   const [newName, setNewName] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedTee, setSelectedTee] = useState<string>("");
@@ -86,7 +71,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
   };
 
 
-  const addPlayer = (player: BasicPlayer) => {
+  const addPlayer = (player: User) => {
     setPlayers([...players, player]);
   };
 
@@ -211,7 +196,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-white flex items-center gap-2">
-            <User className="w-4 h-4" />
+            <UserIcon className="w-4 h-4" />
             Players ({players.length})
           </label>
           <AddPlayerDialog
@@ -238,7 +223,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
               className="p-3 flex justify-between items-center bg-slate-800 text-white border-slate-700"
             >
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-400" />
+                <UserIcon className="w-4 h-4 text-slate-400" />
                 <span className="font-medium">{player.name}</span>
                 {player.id === user?.id && (
                   <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">

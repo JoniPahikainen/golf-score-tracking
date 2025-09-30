@@ -6,29 +6,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
+import { Hole, ScoreUser as User } from "@/types";
 
-interface Hole {
-  holeNumber: number;
-  strokes: number;
-  putts: number;
-  fairwayHit?: boolean;
-  greenInReg?: boolean;
-}
-
-export interface Player {
-  id: string;
-  name: string;
-  holes: Hole[];
-}
 
 interface ScoreEntryProps {
-  initialPlayers: Player[];
+  initialPlayers: User[];
   roundId: string;
   onExit?: () => void;
 }
 
 interface PopupProps {
-  player: Player;
+  player: User;
   holeIndex: number;
   par: number;
   initialStrokes: number;
@@ -40,7 +28,7 @@ const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 
 export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps) => {
   const { user } = useUser();
-  const [players, setPlayers] = useState<Player[]>(initialPlayers);
+  const [players, setPlayers] = useState<User[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const navigate = useNavigate();
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
@@ -91,7 +79,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
     });
   };
 
-  const calculateCurrentScore = (player: Player) =>
+  const calculateCurrentScore = (player: User) =>
     player.holes.slice(0, currentHoleIndex + 1).reduce((total, hole, i) => {
       const strokes = hole.strokes || DEFAULT_PAR[i];
       return total + (strokes - DEFAULT_PAR[i]);
@@ -147,7 +135,7 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
     );
   };
 
-  const renderFullScorecard = (player: Player) => {
+  const renderFullScorecard = (player: User) => {
     const holeNumbers = Array.from({ length: 18 }, (_, i) => i + 1);
     const parNumbers = DEFAULT_PAR;
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Users } from "lucide-react";
+import { User as UserIcon, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,12 +17,12 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { BasicPlayer } from "./StartRound";
+import { User } from "@/types";
 
 interface AddPlayerDialogProps {
-  onAddPlayer: (player: BasicPlayer) => void;
-  existingPlayers: BasicPlayer[];
-  friends: BasicPlayer[];
+  onAddPlayer: (player: User) => void;
+  existingPlayers: User[];
+  friends: User[];
   trigger: React.ReactNode;
 }
 
@@ -71,7 +71,7 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
                   : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
               }`}
             >
-              <User className="w-4 h-4 mr-1" />
+              <UserIcon className="w-4 h-4 mr-1" />
               Guest
             </Button>
             <Button

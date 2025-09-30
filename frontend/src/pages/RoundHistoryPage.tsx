@@ -2,41 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  MapPin,
-  Target,
-  Eye,
-  Trophy,
-  BarChart2,
-} from "lucide-react";
+import { Calendar, MapPin, Target, Eye, Trophy, BarChart2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import api from "@/api/axios";
 import { useToast } from "@/hooks/use-toast";
-
-interface Round {
-  id: string;
-  courseId: string;
-  title?: string;
-  date: string;
-  teeName: string;
-  status?: string;
-  players: Array<{
-    userId: string;
-    totalScore: number;
-    totalPutts?: number;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Course {
-  id: string;
-  name: string;
-  location?: string;
-}
+import {
+  FullRound as Round,
+  RoundHistoryCourse as Course,
+} from "@/types";
 
 export const RoundHistory = () => {
   const [rounds, setRounds] = useState<Round[]>([]);
@@ -80,17 +55,17 @@ export const RoundHistory = () => {
   }, [user?.id, toast]);
 
   const getCourseName = (courseId: string) => {
-    const course = courses.find(c => c.id === courseId);
+    const course = courses.find((c) => c.id === courseId);
     return course?.name || courseId;
   };
 
   const getUserScore = (round: Round) => {
-    const userPlayer = round.players.find(p => p.userId === user?.id);
+    const userPlayer = round.players.find((p) => p.userId === user?.id);
     return userPlayer?.totalScore || 0;
   };
 
   const getUserPutts = (round: Round) => {
-    const userPlayer = round.players.find(p => p.userId === user?.id);
+    const userPlayer = round.players.find((p) => p.userId === user?.id);
     return userPlayer?.totalPutts || 0;
   };
 
@@ -103,8 +78,8 @@ export const RoundHistory = () => {
   const calculateAverage = () => {
     if (rounds.length === 0) return 0;
     const userScores = rounds
-      .map(round => getUserScore(round))
-      .filter(score => score > 0);
+      .map((round) => getUserScore(round))
+      .filter((score) => score > 0);
     if (userScores.length === 0) return 0;
     return Math.round(
       userScores.reduce((sum, score) => sum + score, 0) / userScores.length
@@ -113,8 +88,8 @@ export const RoundHistory = () => {
 
   const getBestScore = () => {
     const userScores = rounds
-      .map(round => getUserScore(round))
-      .filter(score => score > 0);
+      .map((round) => getUserScore(round))
+      .filter((score) => score > 0);
     return userScores.length > 0 ? Math.min(...userScores) : 0;
   };
 
@@ -124,7 +99,9 @@ export const RoundHistory = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-500 dark:text-gray-300">Loading your rounds...</p>
+            <p className="text-gray-500 dark:text-gray-300">
+              Loading your rounds...
+            </p>
           </div>
         </div>
       </div>
@@ -154,21 +131,27 @@ export const RoundHistory = () => {
           <div className="text-3xl font-bold text-green-700 dark:text-green-400">
             {rounds.length}
           </div>
-          <div className="text-sm text-green-600 dark:text-green-300">Rounds Played</div>
+          <div className="text-sm text-green-600 dark:text-green-300">
+            Rounds Played
+          </div>
         </div>
         <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-purple-100 dark:bg-purple-900/40 shadow-sm">
           <BarChart2 className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
           <div className="text-3xl font-bold text-purple-700 dark:text-purple-400">
             {calculateAverage()}
           </div>
-          <div className="text-sm text-purple-600 dark:text-purple-300">Average Score</div>
+          <div className="text-sm text-purple-600 dark:text-purple-300">
+            Average Score
+          </div>
         </div>
         <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-blue-100 dark:bg-blue-900/40 shadow-sm">
           <Target className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
           <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">
             {getBestScore()}
           </div>
-          <div className="text-sm text-blue-600 dark:text-blue-300">Best Score</div>
+          <div className="text-sm text-blue-600 dark:text-blue-300">
+            Best Score
+          </div>
         </div>
       </div>
 
@@ -182,7 +165,7 @@ export const RoundHistory = () => {
           </Card>
         ) : (
           <>
-            {visibleRounds.map(round => (
+            {visibleRounds.map((round) => (
               <Card
                 key={round.id}
                 className="shadow-md rounded-2xl border border-gray-200 dark:border-gray-700"
@@ -191,7 +174,8 @@ export const RoundHistory = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg text-gray-900 dark:text-white">
-                        {round.title || `Round ${format(new Date(round.date), "MMM d")}`}
+                        {round.title ||
+                          `Round ${format(new Date(round.date), "MMM d")}`}
                       </CardTitle>
                       <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 mt-1">
                         <MapPin className="h-3 w-3 text-blue-500" />
@@ -203,7 +187,9 @@ export const RoundHistory = () => {
                       </div>
                     </div>
                     <Badge
-                      className={`${getScoreBadgeColor(getUserScore(round))} text-white text-sm px-3 py-1 rounded-full shadow-sm`}
+                      className={`${getScoreBadgeColor(
+                        getUserScore(round)
+                      )} text-white text-sm px-3 py-1 rounded-full shadow-sm`}
                     >
                       {getUserScore(round)}
                     </Badge>
@@ -228,12 +214,11 @@ export const RoundHistory = () => {
             {visibleCount < rounds.length && (
               <div className="flex justify-center">
                 <Button
-                  onClick={() => setVisibleCount(prev => prev + 10)}
+                  onClick={() => setVisibleCount((prev) => prev + 10)}
                   className=" mt-6 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Show More
                 </Button>
-
               </div>
             )}
           </>

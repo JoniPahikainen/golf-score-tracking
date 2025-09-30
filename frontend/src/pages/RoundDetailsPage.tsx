@@ -16,35 +16,9 @@ import { useState, useEffect } from "react";
 import { useUser } from "@/contexts/UserContext";
 import api from "@/api/axios";
 import { useToast } from "@/hooks/use-toast";
+import { FullRound as Round, DetailsCourse as Course } from "@/types";
 
-interface Round {
-  id: string;
-  courseId: string;
-  title?: string;
-  date: string;
-  teeName: string;
-  status?: string;
-  players: Array<{
-    userId: string;
-    totalScore: number;
-    totalPutts?: number;
-    scores: Array<{
-      holeNumber: number;
-      strokes: number;
-      putts?: number;
-    }>;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Course {
-  id: string;
-  name: string;
-  location?: string;
-}
-
-interface User {
+export interface User {
   id: string;
   userName: string;
   firstName?: string;
@@ -56,12 +30,16 @@ export const RoundDetailsPage = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { toast } = useToast();
-  
+
   const [round, setRound] = useState<Round | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [players, setPlayers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const holes =
+    course?.holes ||
+    Array.from({ length: 18 }, (_, i) => ({ holeNumber: i + 1, par: 4 }));
 
   useEffect(() => {
     const fetchRoundDetails = async () => {
@@ -83,7 +61,9 @@ export const RoundDetailsPage = () => {
 
           // Fetch course details
           if (roundData.courseId) {
-            const courseResponse = await api.get(`/courses/${roundData.courseId}`);
+            const courseResponse = await api.get(
+              `/courses/${roundData.courseId}`
+            );
             if (courseResponse.data.success) {
               setCourse(courseResponse.data.data);
             }
@@ -94,12 +74,12 @@ export const RoundDetailsPage = () => {
           const playerPromises = playerIds.map((playerId: string) =>
             api.get(`/users/${playerId}`).catch(() => null)
           );
-          
+
           const playerResponses = await Promise.all(playerPromises);
           const validPlayers = playerResponses
-            .filter(response => response?.data.success)
-            .map(response => response.data.data);
-          
+            .filter((response) => response?.data.success)
+            .map((response) => response.data.data);
+
           setPlayers(validPlayers);
         }
       } catch (error) {
@@ -125,9 +105,9 @@ export const RoundDetailsPage = () => {
   };
 
   const getPlayerName = (userId: string) => {
-    const player = players.find(p => p.id === userId);
+    const player = players.find((p) => p.id === userId);
     if (player) {
-      return player.firstName && player.lastName 
+      return player.firstName && player.lastName
         ? `${player.firstName} ${player.lastName}`
         : player.userName;
     }
@@ -135,7 +115,7 @@ export const RoundDetailsPage = () => {
   };
 
   const getUserScore = (round: Round) => {
-    const userPlayer = round.players.find(p => p.userId === user?.id);
+    const userPlayer = round.players.find((p) => p.userId === user?.id);
     return userPlayer?.totalScore || 0;
   };
 
@@ -145,7 +125,9 @@ export const RoundDetailsPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-500 dark:text-gray-300">Loading round details...</p>
+            <p className="text-gray-500 dark:text-gray-300">
+              Loading round details...
+            </p>
           </div>
         </div>
       </div>
@@ -158,9 +140,7 @@ export const RoundDetailsPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-red-500 mb-4">{error || "Round not found"}</p>
-            <Button onClick={() => navigate("/app")}>
-              Back to Rounds
-            </Button>
+            <Button onClick={() => navigate("/app")}>Back to Rounds</Button>
           </div>
         </div>
       </div>
@@ -215,13 +195,14 @@ export const RoundDetailsPage = () => {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                {round.players.length} player{round.players.length !== 1 ? 's' : ''}
+                {round.players.length} player
+                {round.players.length !== 1 ? "s" : ""}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600 dark:text-gray-300">
-                Status: {round.status || 'Completed'}
+                Status: {round.status || "Completed"}
               </span>
             </div>
           </div>
@@ -252,12 +233,16 @@ export const RoundDetailsPage = () => {
                       {getPlayerName(player.userId)}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {player.totalPutts ? `${player.totalPutts} putts` : 'No putts recorded'}
+                      {player.totalPutts
+                        ? `${player.totalPutts} putts`
+                        : "No putts recorded"}
                     </p>
                   </div>
                 </div>
                 <Badge
-                  className={`${getScoreBadgeColor(player.totalScore)} text-white text-lg px-4 py-2 rounded-full`}
+                  className={`${getScoreBadgeColor(
+                    player.totalScore
+                  )} text-white text-lg px-4 py-2 rounded-full`}
                 >
                   {player.totalScore}
                 </Badge>
@@ -270,7 +255,9 @@ export const RoundDetailsPage = () => {
       {/* Hole-by-Hole Scores */}
       <Card className="shadow-md rounded-2xl dark:outline dark:outline-gray-700">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg dark:text-gray-300">Hole-by-Hole Scores</CardTitle>
+          <CardTitle className="text-lg dark:text-gray-300">
+            Hole-by-Hole Scores
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -291,30 +278,28 @@ export const RoundDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 18 }, (_, holeIndex) => (
-                  <tr key={holeIndex + 1} className="border-b border-gray-100 dark:border-gray-800">
+                {holes.map((hole) => (
+                  <tr
+                    key={hole.holeNumber}
+                    className="border-b border-gray-100 dark:border-gray-800"
+                  >
                     <td className="py-2 px-3 text-sm font-medium text-gray-900 dark:text-white">
-                      {holeIndex + 1}
+                      {hole.holeNumber} (Par {hole.par})
                     </td>
                     {round.players.map((player) => {
-                      const holeScore = player.scores.find(s => s.holeNumber === holeIndex + 1);
+                      const score = player.scores?.find(
+                        (s) => s.holeNumber === hole.holeNumber
+                      );
                       return (
                         <td
                           key={player.userId}
                           className="text-center py-2 px-3 text-sm text-gray-900 dark:text-white"
                         >
-                          {holeScore ? (
-                            <div>
-                              <div className="font-medium">{holeScore.strokes}</div>
-                              {holeScore.putts && (
-                                <div className="text-xs text-gray-500">
-                                  ({holeScore.putts})
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
+                          {score
+                            ? `${score.strokes}${
+                                score.putts ? ` (${score.putts})` : ""
+                              }`
+                            : "-"}
                         </td>
                       );
                     })}
