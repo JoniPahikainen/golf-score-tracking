@@ -7,7 +7,8 @@ import {
   getRoundById,
   updateScore,
   getAllRounds,
-  deleteAllRounds
+  deleteAllRounds,
+  finishRound
 } from "../../db";
 import { ApiResponse, Round } from "../../db/types";
 import { createRoundSchema } from "../../utils/roundUtils";
@@ -87,6 +88,42 @@ router.put("/:roundId", async (req, res) => {
     } as ApiResponse<never>);
   }
 });
+
+// Update round finished status
+router.put("/:roundId/finish", async (req, res) => {
+  try {
+    const { roundId } = req.params;
+    if (!roundId) {
+      return res.status(400).json({
+        success: false,
+        error: "Round ID is required",
+      } as ApiResponse<never>);
+    }
+
+    const finished = await finishRound(roundId);
+    if (!finished) {
+      return res.status(404).json({
+        success: false,
+        error: "Round not found or could not be finished",
+      } as ApiResponse<never>);
+    }
+
+    return res.json({
+      success: true,
+      message: "Round marked as finished",
+    } as ApiResponse<never>);
+  } catch (error) {
+    console.error("Error finishing round:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+
+    return res.status(500).json({
+      success: false,
+      error: errorMessage,
+    } as ApiResponse<never>);
+  }
+});
+
 
 // Update a score for a specific hole
 router.put("/:roundId/score/:userId/:holeNumber", async (req, res) => {

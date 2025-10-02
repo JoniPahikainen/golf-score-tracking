@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X, Calendar } from "lucide-react";
+import { X, Calendar, Plus, User as UserIcon } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import {
   Select,
@@ -17,29 +17,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-
-export interface BasicPlayer {
-  id: string;
-  name: string;
-}
-
-interface Course {
-  id: string;
-  name: string;
-}
-
-interface Tee {
-  id: string;
-  name: string;
-  courseId: string;
-}
+import { AddPlayerDialog } from "./AddPlayerDialog";
+import { User, Course } from "@/types";
 
 interface StartRoundProps {
   onStart: (data: {
-    players: BasicPlayer[];
+    players: User[];
     courseId: string;
     teeId: string;
     date: Date;
+    friends: User[];
     title?: string;
   }) => void;
   tees: {
@@ -51,25 +38,25 @@ interface StartRoundProps {
   courses: Course[];
   onCourseSelect: (courseId: string) => void;
   isLoadingTees: boolean;
+  friends: User[];
 }
 
-export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoundProps) => {
+export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTees, friends }: StartRoundProps) => {
   const { user } = useUser();
-  const [players, setPlayers] = useState<BasicPlayer[]>([]);
+  const [players, setPlayers] = useState<User[]>([]);
   const [newName, setNewName] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [selectedTee, setSelectedTee] = useState<string>("");
   const [roundDate, setRoundDate] = useState<Date>(new Date());
   const [roundTitle, setRoundTitle] = useState("");
-  const [isLoadingTees, setIsLoadingTees] = useState(false);
 
   // Initialize with current user as first player
   useEffect(() => {
     if (user) {
       setPlayers([{
         id: user.id,
-        name: user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
+        name: user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
           : user.userName
       }]);
     }
@@ -79,19 +66,17 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
     setSelectedCourse(courseId);
     setSelectedTee("");
     if (courseId) {
-      setIsLoadingTees(true);
       onCourseSelect(courseId);
-      setIsLoadingTees(false);
     }
   };
 
-  const addPlayer = () => {
-    if (!newName.trim()) return;
-    setPlayers([
-      ...players,
-      { id: Date.now().toString(), name: newName.trim() },
-    ]);
-    setNewName("");
+
+  const addPlayer = (player: User) => {
+    setPlayers([...players, player]);
+  };
+
+  const removePlayer = (playerId: string) => {
+    setPlayers(players.filter((p) => p.id !== playerId));
   };
 
   const filteredTees = selectedCourse
@@ -105,6 +90,7 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
       courseId: selectedCourse,
       teeId: selectedTee,
       date: roundDate,
+      friends,
       title: roundTitle || undefined,
     });
   };
@@ -164,10 +150,10 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
                   isLoadingTees
                     ? "Loading tees..."
                     : !selectedCourse
-                    ? "Select a course first"
-                    : filteredTees.length
-                    ? "Select a tee"
-                    : "No tees available"
+                      ? "Select a course first"
+                      : filteredTees.length
+                        ? "Select a tee"
+                        : "No tees available"
                 }
               />
             </SelectTrigger>
@@ -207,40 +193,60 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect }: StartRoun
       </div>
 
       {/* Players Section */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Players</label>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-white flex items-center gap-2">
+            <UserIcon className="w-4 h-4" />
+            Players ({players.length})
+          </label>
+          <AddPlayerDialog
+            onAddPlayer={addPlayer}
+            existingPlayers={players}
+            friends={friends}
+            trigger={
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Player
+              </Button>
+            }
+          />
+        </div>
+
+        {/* Players List */}
         <div className="space-y-2">
-          {players.map((p) => (
+          {players.map((player) => (
             <Card
-              key={p.id}
+              key={player.id}
               className="p-3 flex justify-between items-center bg-slate-800 text-white border-slate-700"
             >
-              <span>{p.name}</span>
-              {p.id !== user?.id && (
+              <div className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-slate-400" />
+                <span className="font-medium">{player.name}</span>
+                {player.id === user?.id && (
+                  <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
+                    You
+                  </span>
+                )}
+              </div>
+              {player.id !== user?.id && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    setPlayers(players.filter((pl) => pl.id !== p.id))
-                  }
+                  onClick={() => removePlayer(player.id)}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                 >
-                  <X className="w-4 h-4 text-red-500" />
+                  <X className="w-4 h-4" />
                 </Button>
               )}
             </Card>
           ))}
         </div>
-        <div className="flex gap-2">
-          <Input
-            className="bg-slate-800 text-white border-slate-700 flex-1"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addPlayer()}
-            placeholder="Add player"
-          />
-          <Button onClick={addPlayer}>Add</Button>
-        </div>
+
       </div>
+
 
       <Button
         className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white"

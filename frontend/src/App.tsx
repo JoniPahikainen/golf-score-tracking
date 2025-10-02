@@ -11,6 +11,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { RoundHistory } from "./pages/RoundHistoryPage";
 import { ScoreEntryPage } from "./pages/ScoreEntryPage";
 import { UserProfile } from "./pages/UserProfilePage";
+import { RoundDetailsPage } from "./pages/RoundDetailsPage";
 
 
 const queryClient = new QueryClient();
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
       {
         path: "score-entry/:roundId",
         element: <ScoreEntryPage />,
+      },
+      {
+        path: "round/:roundId",
+        element: <RoundDetailsPage />,
       },
       {
         path: "user-profile",

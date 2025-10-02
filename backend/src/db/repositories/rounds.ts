@@ -222,7 +222,9 @@ export const updateScore = async (
 
     const { error: scoreError } = await supabase
       .from("player_scores")
-      .update({
+      .upsert({
+        round_player_id: roundPlayer.id,
+        hole_number: holeNumber,
         strokes: scoreData.strokes,
         putts: scoreData.putts ?? 0,
         fairway_hit: scoreData.fairwayHit ?? false,
@@ -231,9 +233,9 @@ export const updateScore = async (
         driving_distance: scoreData.drivingDistance,
         notes: scoreData.notes,
         updated_at: new Date(),
-      })
-      .eq("round_player_id", roundPlayer.id)
-      .eq("hole_number", holeNumber);
+      }, {
+        onConflict: 'round_player_id,hole_number'
+      });
 
     if (scoreError)
       throw handleSupabaseError(scoreError, "Failed to update score");
@@ -286,6 +288,25 @@ export const deleteRound = async (id: string): Promise<boolean> => {
     throw new Error("Unknown error deleting round");
   }
 };
+
+export const finishRound = async (roundId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("rounds")
+      .update({
+        status: "completed",
+        updated_at: new Date(),
+      })
+      .eq("id", roundId);
+
+    if (error) throw handleSupabaseError(error, "Failed to finish round");
+    return true;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error finishing round");
+  }
+};
+
 
 export const getRoundsByUserId = async (
   userId: string,
