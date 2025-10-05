@@ -21,8 +21,8 @@ A full-stack application for tracking golf scores and rounds with React, TypeScr
 ## Quick Start
 
 ### Prerequisites
-- Node.js
-- npm or yarn
+- Node.js and npm/yarn (for manual setup)
+- Docker and Docker Compose (for containerized setup)
 - Supabase account
 
 ### Installation
@@ -32,6 +32,40 @@ A full-stack application for tracking golf scores and rounds with React, TypeScr
    git clone <repository-url>
    cd golf-score-tracking
    ```
+
+## Docker Setup (Recommended)
+
+This is the fastest way to get the application running:
+
+1. **Configure Environment Variables**
+   ```bash
+   cp env.example .env
+   ```
+   
+   Edit the `.env` file with your Supabase credentials:
+   - `DATABASE_URL` - Your Supabase PostgreSQL connection string
+   - `JWT_SECRET` - Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+   - `VITE_SUPABASE_URL` - Your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+   - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
+
+2. **Start the Application**
+   ```bash
+   docker-compose up --build
+   ```
+
+3. **Access the Application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3000
+
+4. **Stop the Application**
+   ```bash
+   docker-compose down
+   ```
+
+## Manual Setup
+
+If you prefer to run the application without Docker:
 
 2. **Backend Setup**
    ```bash
@@ -87,20 +121,37 @@ A full-stack application for tracking golf scores and rounds with React, TypeScr
 ## Project Structure
 
 ```
-├── backend/          # Express API server
+├── backend/              # Express API server
 │   ├── src/
-│   │   ├── routes/   # API routes
-│   │   ├── db/       # Database layer
-│   │   └── utils/    # Utility functions
-│   └── tests/        # Backend tests
-├── frontend/         # React application
+│   │   ├── routes/       # API routes
+│   │   ├── db/           # Database layer
+│   │   └── utils/        # Utility functions
+│   ├── tests/            # Backend tests
+│   └── Dockerfile.backend # Backend Docker configuration
+├── frontend/             # React application
 │   ├── src/
-│   │   ├── components/ # React components
-│   │   ├── pages/     # Page components
-│   │   └── hooks/     # Custom hooks
+│   │   ├── components/   # React components
+│   │   ├── pages/        # Page components
+│   │   └── hooks/        # Custom hooks
+│   └── Dockerfile.frontend # Frontend Docker configuration
+├── db/                   # Database schema and documentation
+├── docker-compose.yml    # Docker Compose configuration
+├── env.example           # Root-level environment variables template
 └── README.md
 ```
 
 ## Environment Variables
 
-See `backend/env.example` and `frontend/env.example` for required environment variables.
+### For Docker Setup
+Use the root-level `env.example` file which contains all required variables for both frontend and backend.
+
+### For Manual Setup
+See `backend/env.example` and `frontend/env.example` for their respective environment variables.
+
+## Database
+
+See `db/SCHEMA.md` for a simplified schema view with:
+- Required: `[x]` indicates the column must be provided
+- Default: textual default value when the DB auto-fills
+
+For full types, constraints, and triggers, see `db/schema.sql`. Enums are listed in `db/SCHEMA.md` under Enums.

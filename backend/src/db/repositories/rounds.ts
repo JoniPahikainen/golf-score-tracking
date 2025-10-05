@@ -307,29 +307,32 @@ export const finishRound = async (roundId: string): Promise<boolean> => {
   }
 };
 
-
 export const getRoundsByUserId = async (
   userId: string,
   limit?: number
 ): Promise<Round[]> => {
-  try {
-    let query = supabase
-      .from("rounds")
-      .select(ROUND_SELECT_FIELDS)
-      .eq("round_players.user_id", userId)
-      .order("date", { ascending: false });
-
-    if (limit) query = query.limit(limit);
-
-    const { data, error } = await query;
-    if (error) throw handleSupabaseError(error, "Failed to get rounds");
-
-    return data?.map(transformRoundData) || [];
-  } catch (error) {
-    if (error instanceof Error) throw error;
-    throw new Error("Unknown error getting rounds by user");
+  const { data, error } = await supabase
+    .from("rounds")
+    .select(ROUND_SELECT_FIELDS)
+    .in(
+      "id",
+      (
+        await supabase
+          .from("round_players")
+          .select("round_id")
+          .eq("user_id", userId)
+      ).data?.map(rp => rp.round_id) || []
+    )
+    .order("date", { ascending: false })
+  
+  if  (limit) {
+    data?.splice(limit);
   }
+
+  if (error) throw handleSupabaseError(error, "Failed to get rounds");
+  return (data || []).map(transformRoundData);
 };
+
 
 export const getRoundById = async (id: string): Promise<Round | null> => {
   try {

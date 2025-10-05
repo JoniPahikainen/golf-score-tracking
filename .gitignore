@@ -1,0 +1,12 @@
+# Environment variables
+.env
+backend/.env
+frontend/.env
+
+# Keep example files
+!backend/env.example
+!frontend/env.example
+!env.example
+
+# Docker
+docker-compose.override.yml

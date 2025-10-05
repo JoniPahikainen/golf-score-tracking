@@ -1,8 +1,10 @@
 {
-  "name": "backend",
+  "name": "golf-score-tracking-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Backend API for Golf Score Tracking application",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -11,10 +13,14 @@
     "dev": "ts-node-dev src/index.ts",
     "start": "ts-node src/index.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["golf", "score", "tracking", "api", "express", "typescript", "supabase"],
+  "author": "Joni Pahikainen",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JoniPahikainen/golf-score-tracking.git",
+    "directory": "backend"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
     "@types/express": "4.17.21",
