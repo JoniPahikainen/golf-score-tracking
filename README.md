@@ -29,7 +29,7 @@ A full-stack application for tracking golf scores and rounds with React, TypeScr
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/JoniPahikainen/golf-score-tracking.git 
    cd golf-score-tracking
    ```
 
