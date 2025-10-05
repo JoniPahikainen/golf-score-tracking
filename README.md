@@ -147,11 +147,3 @@ Use the root-level `env.example` file which contains all required variables for 
 
 ### For Manual Setup
 See `backend/env.example` and `frontend/env.example` for their respective environment variables.
-
-## Database
-
-See `db/SCHEMA.md` for a simplified schema view with:
-- Required: `[x]` indicates the column must be provided
-- Default: textual default value when the DB auto-fills
-
-For full types, constraints, and triggers, see `db/schema.sql`. Enums are listed in `db/SCHEMA.md` under Enums.
