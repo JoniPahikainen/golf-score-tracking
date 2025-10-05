@@ -1,8 +1,17 @@
 {
   "name": "golf-score-tracking-frontend",
+  "version": "0.1.0",
+  "description": "Frontend React application for Golf Score Tracking",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JoniPahikainen/golf-score-tracking.git",
+    "directory": "frontend"
+  },
+  "keywords": ["golf", "score", "tracking", "react", "typescript", "vite", "tailwind"],
+  "author": "Your Name",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
