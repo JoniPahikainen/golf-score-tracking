@@ -69,6 +69,16 @@ export const Header = ({ handleLogout }: HeaderProps) => {
                     Settings
                   </button>
                   <button
+                    className="flex items-center w-full px-4 py-2 text-left hover:bg-slate-700 gap-2"
+                    onClick={() => {
+                      navigate("/app/friends");
+                      setIsProfileOpen(false);
+                    }}
+                  >
+                    <User className="h-4 w-4" />
+                    Friends
+                  </button>
+                  <button
                     className="flex items-center w-full px-4 py-2 text-left hover:bg-slate-700 gap-2 text-red-400 hover:text-red-300"
                     onClick={handleLogout}
                   >
