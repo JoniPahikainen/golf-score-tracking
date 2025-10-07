@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { addFriend, acceptFriendRequest, rejectFriendRequest, getFriendRequests, getFriendsList, removeFriend } from '../../db';
+import { addFriend, acceptFriendRequest, rejectFriendRequest, getFriendRequests, getFriendsList, removeFriend, getUserByUsername } from '../../db';
 
 const router = Router();
 
-// Send a friend request
+// Send a friend request (userId)
 router.post('/:userId', async (req, res) => {
   const { userId } = req.params;
   const { friendId } = req.body;
@@ -13,12 +13,14 @@ router.post('/:userId', async (req, res) => {
     try {
     await addFriend(userId, friendId);
     return res.json({ success: true, message: 'Friend request sent' });
-    } catch (error) {
+  } catch (error) {
     console.error('Error sending friend request:', error);
     return res.status(500).json({ success: false, error: 'Internal server error' });
     }
 
 });
+
+
 // Respond to a friend request (accept or reject)
 router.post('/:userId/friend-requests/:friendId', async (req, res) => {
   const { userId, friendId } = req.params;
@@ -44,6 +46,35 @@ router.post('/:userId/friend-requests/:friendId', async (req, res) => {
   }
 });
 
+
+// Send a friend request (userName)
+router.post('/:userId/by-username', async (req, res) => {
+  const { userId } = req.params;
+  const { friendUsername } = req.body;
+
+  if (!userId || !friendUsername) {
+    return res.status(400).json({ success: false, error: 'User ID and friendUsername are required' });
+  }
+
+  try {
+    const resolvedUser = await getUserByUsername(friendUsername);
+    if (!resolvedUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (resolvedUser.id === userId) {
+      return res.status(400).json({ success: false, error: 'Cannot add yourself as a friend' });
+    }
+
+    await addFriend(userId, resolvedUser.id);
+    return res.json({ success: true, message: 'Friend request sent' });
+  } catch (error) {
+    console.error('Error sending friend request by username:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
 // Get all friend requests (incoming + outgoing)
 router.get('/:userId/friend-requests', async (req, res) => {
   const { userId } = req.params;
@@ -61,6 +92,7 @@ router.get('/:userId/friend-requests', async (req, res) => {
 
 });
 
+
 // Get current friends list
 router.get('/:userId', async (req, res) => {
   const { userId } = req.params;
@@ -76,6 +108,7 @@ router.get('/:userId', async (req, res) => {
     return res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
+
 
 // Remove a friend
 router.delete('/:userId/:friendId', async (req, res) => {
