@@ -12,6 +12,7 @@ import { RoundHistory } from "./pages/RoundHistoryPage";
 import { ScoreEntryPage } from "./pages/ScoreEntryPage";
 import { UserProfile } from "./pages/UserProfilePage";
 import { RoundDetailsPage } from "./pages/RoundDetailsPage";
+import { FriendsPage } from "./pages/FriendsPage";
 
 
 const queryClient = new QueryClient();
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
       {
         path: "user-profile",
         element: <UserProfile />,
+      },
+      {
+        path: "friends",
+        element: <FriendsPage />,
       },
     ],
   },
