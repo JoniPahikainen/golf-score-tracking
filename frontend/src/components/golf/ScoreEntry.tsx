@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import api from "@/api/axios";
 import { Hole, ScoreUser as User } from "@/types";
 
-
 interface ScoreEntryProps {
   initialPlayers: User[];
   roundId: string;
@@ -26,7 +25,11 @@ interface PopupProps {
 
 const DEFAULT_PAR = [4, 4, 3, 5, 4, 3, 4, 5, 4, 4, 3, 5, 4, 3, 4, 5, 4, 4];
 
-export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps) => {
+export const ScoreEntry = ({
+  initialPlayers,
+  roundId,
+  onExit,
+}: ScoreEntryProps) => {
   const { user } = useUser();
   const [players, setPlayers] = useState<User[]>(initialPlayers);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
@@ -66,7 +69,11 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
       navigate("/app");
     } catch (error) {
       console.error("Error finishing round:", error);
-      toast({ title: "Error", description: "Failed to finish round.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to finish round.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -151,17 +158,19 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
           : "";
       const isCurrentHole = index === currentHoleIndex;
       const scoreDiff = strokes - DEFAULT_PAR[index];
-      let scoreColorClass = 'text-gray-50';
+      let scoreColorClass = "text-gray-50";
 
       if (strokes > 0) {
-        if (scoreDiff < 0) scoreColorClass = 'text-green-400';
-        else if (scoreDiff > 0) scoreColorClass = 'text-red-400';
+        if (scoreDiff < 0) scoreColorClass = "text-green-400";
+        else if (scoreDiff > 0) scoreColorClass = "text-red-400";
       }
 
       return (
         <div
           key={hole.holeNumber}
-          className={`flex-1 text-center py-2 transition-colors duration-200 ${isCurrentHole ? "bg-slate-700 rounded" : ""}`}
+          className={`flex-1 text-center py-2 transition-colors duration-200 ${
+            isCurrentHole ? "bg-slate-700 rounded" : ""
+          }`}
         >
           <div className="text-xs font-light text-gray-400">
             {hole.holeNumber}
@@ -242,7 +251,11 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
     <div className="bg-slate-900 text-gray-50 min-h-screen p-4 space-y-6">
       {/* Back Button */}
       {onExit && (
-        <Button variant="ghost" onClick={onExit} className="text-gray-400 hover:text-gray-50">
+        <Button
+          variant="ghost"
+          onClick={onExit}
+          className="text-gray-400 hover:text-gray-50"
+        >
           ← Back to Start
         </Button>
       )}
@@ -256,7 +269,9 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
         >
           <ChevronLeft />
         </Button>
-        <div className="font-bold text-2xl text-gray-50">Hole {currentHoleIndex + 1}</div>
+        <div className="font-bold text-2xl text-gray-50">
+          Hole {currentHoleIndex + 1}
+        </div>
         <Button
           variant="ghost"
           onClick={() => setCurrentHoleIndex((i) => Math.min(17, i + 1))}
@@ -270,9 +285,10 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
       {players.map((player) => {
         const hole = player.holes[currentHoleIndex];
         const score = calculateCurrentScore(player);
-        const scoreDisplay = score > 0 ? `+${score}` : score === 0 ? 'E' : score;
+        const scoreDisplay =
+          score > 0 ? `+${score}` : score === 0 ? "E" : score;
         const currentHoleStrokes = hole.strokes > 0 ? hole.strokes : "-";
-        
+
         return (
           <Card
             key={player.id}
@@ -284,7 +300,9 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="font-bold text-lg text-gray-50">{player.name}</div>
+                <div className="font-bold text-lg text-gray-50">
+                  {player.name}
+                </div>
                 {player.id !== user?.id && (
                   <span className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full font-medium">
                     Friend
@@ -293,7 +311,8 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-sm font-medium text-gray-400">
-                  <span className="font-bold text-gray-50">Score:</span> {scoreDisplay}
+                  <span className="font-bold text-gray-50">Score:</span>{" "}
+                  {scoreDisplay}
                 </div>
                 <Button
                   className="rounded-full h-12 w-12 p-0 flex items-center justify-center text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
@@ -327,16 +346,27 @@ export const ScoreEntry = ({ initialPlayers, roundId, onExit }: ScoreEntryProps)
                   );
 
                   try {
-                    const url = `/rounds/${roundId}/score/${player.id}/${currentHoleIndex + 1}`;
+                    const url = `/rounds/${roundId}/score/${player.id}/${
+                      currentHoleIndex + 1
+                    }`;
                     const payload = {
                       strokes: newStrokes,
                       putts: player.holes[currentHoleIndex].putts || 0,
                     };
                     await api.put(url, payload);
-                    toast({ title: "Score updated!", description: `Hole ${currentHoleIndex + 1} for ${player.name} saved.`, });
+                    toast({
+                      title: "Score updated!",
+                      description: `Hole ${currentHoleIndex + 1} for ${
+                        player.name
+                      } saved.`,
+                    });
                   } catch (err) {
                     console.error("Error updating score:", err);
-                    toast({ title: "Error", description: "Failed to save score.", variant: "destructive" });
+                    toast({
+                      title: "Error",
+                      description: "Failed to save score.",
+                      variant: "destructive",
+                    });
                   }
                 }}
                 onClose={() => setPopup({ playerId: null })}

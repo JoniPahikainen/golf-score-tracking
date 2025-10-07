@@ -41,7 +41,14 @@ interface StartRoundProps {
   friends: User[];
 }
 
-export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTees, friends }: StartRoundProps) => {
+export const StartRound = ({
+  onStart,
+  tees,
+  courses,
+  onCourseSelect,
+  isLoadingTees,
+  friends,
+}: StartRoundProps) => {
   const { user } = useUser();
   const [players, setPlayers] = useState<User[]>([]);
   const [newName, setNewName] = useState("");
@@ -53,12 +60,15 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
   // Initialize with current user as first player
   useEffect(() => {
     if (user) {
-      setPlayers([{
-        id: user.id,
-        name: user.firstName && user.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user.userName
-      }]);
+      setPlayers([
+        {
+          id: user.id,
+          name:
+            user.firstName && user.lastName
+              ? `${user.firstName} ${user.lastName}`
+              : user.userName,
+        },
+      ]);
     }
   }, [user]);
 
@@ -69,7 +79,6 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
       onCourseSelect(courseId);
     }
   };
-
 
   const addPlayer = (player: User) => {
     setPlayers([...players, player]);
@@ -123,15 +132,20 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
           >
             <SelectTrigger className="bg-slate-800 text-white border-slate-700">
               <SelectValue
-                placeholder={Array.isArray(courses) && courses.length ? "Select a course" : "Loading courses..."}
+                placeholder={
+                  Array.isArray(courses) && courses.length
+                    ? "Select a course"
+                    : "Loading courses..."
+                }
               />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 text-white border-slate-700">
-              {Array.isArray(courses) && courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.name}
-                </SelectItem>
-              ))}
+              {Array.isArray(courses) &&
+                courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -150,10 +164,10 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
                   isLoadingTees
                     ? "Loading tees..."
                     : !selectedCourse
-                      ? "Select a course first"
-                      : filteredTees.length
-                        ? "Select a tee"
-                        : "No tees available"
+                    ? "Select a course first"
+                    : filteredTees.length
+                    ? "Select a tee"
+                    : "No tees available"
                 }
               />
             </SelectTrigger>
@@ -244,15 +258,9 @@ export const StartRound = ({ onStart, tees, courses, onCourseSelect, isLoadingTe
             </Card>
           ))}
         </div>
-
       </div>
 
-
-      <Button
-        className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white"
-        onClick={handleStart}
-        disabled={!selectedCourse || !selectedTee}
-      >
+      <Button onClick={handleStart} disabled={!selectedCourse || !selectedTee}>
         Start Round
       </Button>
     </div>
