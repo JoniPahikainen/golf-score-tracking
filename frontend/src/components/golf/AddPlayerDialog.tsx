@@ -52,14 +52,14 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Add Player</DialogTitle>
+          <DialogTitle>Add Player</DialogTitle>
         </DialogHeader>
 
         {/* Player Type Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white">Player Type</label>
+          <label className="text-sm font-medium">Player Type</label>
           <div className="flex gap-2">
             <Button
               variant={addMode === "guest" ? "default" : "outline"}
@@ -68,7 +68,7 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
               className={`flex-1 ${
                 addMode === "guest"
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+                  : "dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:hover:bg-slate-600"
               }`}
             >
               <UserIcon className="w-4 h-4 mr-1" />
@@ -81,7 +81,7 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
               className={`flex-1 ${
                 addMode === "friend"
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+                  : "dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:hover:bg-slate-600"
               }`}
             >
               <Users className="w-4 h-4 mr-1" />
@@ -93,9 +93,8 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
         {/* Input Section */}
         {addMode === "guest" ? (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Guest Name</label>
+            <label className="text-sm font-medium">Guest Name</label>
             <Input
-              className="bg-slate-700 text-white border-slate-600"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addPlayer()}
@@ -105,12 +104,12 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
           </div>
         ) : (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Select Friend</label>
+            <label className="text-sm font-medium">Select Friend</label>
             <Select value={selectedFriend} onValueChange={setSelectedFriend}>
-              <SelectTrigger className="bg-slate-700 text-white border-slate-600">
+              <SelectTrigger>
                 <SelectValue placeholder="Choose a friend" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 text-white border-slate-600">
+              <SelectContent>
                 {friends
                   .filter((f) => !existingPlayers.some((p) => p.id === f.id))
                   .map((friend) => (
@@ -125,8 +124,7 @@ export const AddPlayerDialog = ({ onAddPlayer, existingPlayers, friends, trigger
 
         <DialogFooter className="flex gap-2">
           <Button
-            variant="outline"
-            className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+            variant="destructive"
           >
             Cancel
           </Button>
