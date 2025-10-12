@@ -105,16 +105,16 @@ export const StartRound = ({
   };
 
   return (
-    <div className="space-y-4 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">Start New Round</h2>
+    <div className="space-y-4 max-w-2xl mx-auto dark:text-white">
+      <h2 className="text-2xl font-bold mb-6">Start New Round</h2>
 
       {/* Round Title */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">
+        <label className="text-sm font-medium">
           Round Title (Optional)
         </label>
         <Input
-          className="bg-slate-800 text-white border-slate-700"
+          className="dark:bg-slate-800 dark:border-slate-700"
           value={roundTitle}
           onChange={(e) => setRoundTitle(e.target.value)}
           placeholder="e.g. Weekend Game, Tournament, etc."
@@ -124,13 +124,13 @@ export const StartRound = ({
       {/* Course Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white">Course</label>
+          <label className="text-sm font-medium">Course</label>
           <Select
             onValueChange={handleCourseChange}
             value={selectedCourse}
             disabled={courses.length === 0}
           >
-            <SelectTrigger className="bg-slate-800 text-white border-slate-700">
+            <SelectTrigger>
               <SelectValue
                 placeholder={
                   Array.isArray(courses) && courses.length
@@ -139,7 +139,7 @@ export const StartRound = ({
                 }
               />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 text-white border-slate-700">
+            <SelectContent>
               {Array.isArray(courses) &&
                 courses.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
@@ -152,13 +152,13 @@ export const StartRound = ({
 
         {/* Tee Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white">Tee</label>
+          <label className="text-sm font-medium">Tee</label>
           <Select
             onValueChange={setSelectedTee}
             value={selectedTee}
             disabled={!selectedCourse || isLoadingTees}
           >
-            <SelectTrigger className="bg-slate-800 text-white border-slate-700">
+            <SelectTrigger>
               <SelectValue
                 placeholder={
                   isLoadingTees
@@ -171,7 +171,7 @@ export const StartRound = ({
                 }
               />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 text-white border-slate-700">
+            <SelectContent>
               {filteredTees.map((tee) => (
                 <SelectItem key={tee.id} value={tee.id}>
                   {tee.color}
@@ -184,21 +184,21 @@ export const StartRound = ({
 
       {/* Date Picker */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Date</label>
+        <label className="text-sm font-medium">Date</label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant={"outline"}
-              className="w-full justify-start text-left font-normal bg-slate-800 text-white hover:bg-slate-700 border-slate-700"
+              className="w-full justify-start text-left font-normal dark:bg-slate-800 dark:border-slate-700"
             >
               <Calendar className="mr-2 h-4 w-4" />
               {format(roundDate, "PPP")}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700">
+          <PopoverContent className="w-auto p-0 dark:bg-slate-800 dark:border-slate-700">
             <input
               type="date"
-              className="bg-slate-800 text-white p-2 rounded-md border border-slate-700"
+              className="dark:bg-slate-800 dark:text-white p-2 rounded-md border dark:border-slate-700"
               value={format(roundDate, "yyyy-MM-dd")}
               onChange={(e) => setRoundDate(new Date(e.target.value))}
             />
@@ -209,7 +209,7 @@ export const StartRound = ({
       {/* Players Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-white flex items-center gap-2">
+          <label className="text-sm font-medium flex items-center gap-2">
             <UserIcon className="w-4 h-4" />
             Players ({players.length})
           </label>
@@ -220,7 +220,7 @@ export const StartRound = ({
             trigger={
               <Button
                 size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700"
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Add Player
@@ -234,13 +234,13 @@ export const StartRound = ({
           {players.map((player) => (
             <Card
               key={player.id}
-              className="p-3 flex justify-between items-center bg-slate-800 text-white border-slate-700"
+              className="p-3 flex justify-between items-center dark:bg-slate-800 dark:border-slate-700"
             >
               <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-slate-400" />
+                <UserIcon className="w-4 h-4 dark:text-slate-400 text-blue-500" />
                 <span className="font-medium">{player.name}</span>
                 {player.id === user?.id && (
-                  <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
+                  <span className="text-white text-xs bg-blue-500 px-2 py-1 rounded-full">
                     You
                   </span>
                 )}
