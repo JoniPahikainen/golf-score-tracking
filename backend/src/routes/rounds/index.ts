@@ -8,7 +8,7 @@ import {
   updateScore,
   getAllRounds,
   deleteAllRounds,
-  finishRound
+  finishRound,
 } from "../../db";
 import { ApiResponse, Round } from "../../db/types";
 import { createRoundSchema } from "../../utils/roundUtils";
@@ -24,10 +24,13 @@ router.post("/", async (req, res) => {
     // Add totalScore to each player
     const roundRequestWithTotalScore = {
       ...roundRequest,
-      players: roundRequest.players.map(player => ({
+      players: roundRequest.players.map((player) => ({
         ...player,
-        totalScore: player.scores.reduce((sum, score) => sum + score.strokes, 0)
-      }))
+        totalScore: player.scores.reduce(
+          (sum, score) => sum + score.strokes,
+          0
+        ),
+      })),
     };
 
     const id = await createRound(roundRequestWithTotalScore);
@@ -123,7 +126,6 @@ router.put("/:roundId/finish", async (req, res) => {
     } as ApiResponse<never>);
   }
 });
-
 
 // Update a score for a specific hole
 router.put("/:roundId/score/:userId/:holeNumber", async (req, res) => {

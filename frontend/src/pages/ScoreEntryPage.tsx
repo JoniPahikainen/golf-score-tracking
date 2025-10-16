@@ -4,6 +4,7 @@ import api from "@/api/axios";
 import { useEffect, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { ScoreUser as User } from "@/types";
+import { useRoundSocket } from "@/hooks/useRoundSocket";
 
 export const ScoreEntryPage = () => {
   const { roundId } = useParams();
@@ -11,19 +12,19 @@ export const ScoreEntryPage = () => {
   const { user } = useUser();
   const [players, setPlayers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useRoundSocket(roundId!, setPlayers);
 
   useEffect(() => {
     const fetchRoundData = async () => {
       try {
+        setIsLoading(true);
+
         const response = await api.get(`/rounds/${roundId}`);
         const roundData = response.data;
         const roundPlayers = roundData.data?.players || [];
 
-        console.log("Round data from backend:", roundData);
-        console.log("Round players:", roundPlayers);
-
-        setIsLoadingPlayers(true);
         const initializedPlayers = await Promise.all(
           roundPlayers.map(async (player: any) => {
             const holes = Array.from({ length: 18 }, (_, i) => {
@@ -32,7 +33,7 @@ export const ScoreEntryPage = () => {
                 (s: any) => s.holeNumber === holeNumber
               );
               return {
-                holeNumber: holeNumber,
+                holeNumber,
                 strokes: score?.strokes || 0,
                 putts: score?.putts || 0,
                 fairwayHit: score?.fairwayHit,
@@ -44,24 +45,14 @@ export const ScoreEntryPage = () => {
             try {
               const userResponse = await api.get(`/users/${player.userId}`);
               if (userResponse.data.success && userResponse.data.data) {
-                const userData = userResponse.data.data;
+                const u = userResponse.data.data;
                 playerName =
-                  userData.firstName && userData.lastName
-                    ? `${userData.firstName} ${userData.lastName}`
-                    : userData.userName || playerName;
+                  u.firstName && u.lastName
+                    ? `${u.firstName} ${u.lastName}`
+                    : u.userName || playerName;
               }
-            } catch (error) {
-              console.warn(
-                `Could not fetch user info for ${player.userId}:`,
-                error
-              );
-            }
-
-            return {
-              id: player.userId,
-              name: playerName,
-              holes: holes,
-            };
+            } catch {}
+            return { id: player.userId, name: playerName, holes };
           })
         );
 
@@ -79,48 +70,37 @@ export const ScoreEntryPage = () => {
           });
         }
 
-        setPlayers(initializedPlayers);
-        setIsLoadingPlayers(false);
+        setPlayers([...initializedPlayers]);
+        setLastUpdated(new Date());
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching round data:", error);
         navigate("/app");
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchRoundData();
-  }, [roundId, navigate]);
+  }, [roundId, navigate, user]);
 
-  const handleSave = async (playersData: User[]) => {
-    try {
-      await api.put(`/rounds/${roundId}/scores`, { players: playersData });
-      navigate(`/app/round/${roundId}`);
-    } catch (error) {
-      console.error("Error saving scores:", error);
-    }
-  };
-
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-lg">Loading round data...</div>
-          {isLoadingPlayers && (
-            <div className="text-sm text-gray-500 mt-2">
-              Fetching player information...
-            </div>
-          )}
-        </div>
+        <div className="text-center">Loading round data...</div>
       </div>
     );
-  }
 
   return (
-    <ScoreEntry
-      initialPlayers={players}
-      roundId={roundId!}
-      onExit={() => navigate(`/app/round/${roundId}`)}
-    />
+    <div>
+      {lastUpdated && (
+        <div className="fixed top-4 right-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-xs z-50">
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      )}
+      <ScoreEntry
+        initialPlayers={players}
+        roundId={roundId!}
+        onExit={() => navigate(`/app/round/${roundId}`)}
+      />
+    </div>
   );
 };

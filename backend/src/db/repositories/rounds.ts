@@ -1,3 +1,4 @@
+import { broadcast } from "../..";
 import { supabase } from "../supabase";
 import {
   Round,
@@ -151,11 +152,24 @@ export const createRound = async (
 
     await Promise.all(
       round.players.map(async (player) => {
-        const totalScore = player.scores.reduce((sum, score) => sum + score.strokes, 0);
-        const totalPutts = player.scores.reduce((sum, score) => sum + (score.putts ?? 0), 0);
-        const fairwaysHit = player.scores.filter(score => score.fairwayHit).length;
-        const greensInRegulation = player.scores.filter(score => score.greenInRegulation).length;
-        const totalPenalties = player.scores.reduce((sum, score) => sum + (score.penalties ?? 0), 0);
+        const totalScore = player.scores.reduce(
+          (sum, score) => sum + score.strokes,
+          0
+        );
+        const totalPutts = player.scores.reduce(
+          (sum, score) => sum + (score.putts ?? 0),
+          0
+        );
+        const fairwaysHit = player.scores.filter(
+          (score) => score.fairwayHit
+        ).length;
+        const greensInRegulation = player.scores.filter(
+          (score) => score.greenInRegulation
+        ).length;
+        const totalPenalties = player.scores.reduce(
+          (sum, score) => sum + (score.penalties ?? 0),
+          0
+        );
 
         const { data: playerData, error: playerError } = await supabase
           .from("round_players")
@@ -175,7 +189,7 @@ export const createRound = async (
         if (playerError)
           throw handleSupabaseError(playerError, "Failed to create player");
 
-        const scoresData = player.scores.map(score => ({
+        const scoresData = player.scores.map((score) => ({
           round_player_id: playerData.id,
           hole_number: score.holeNumber,
           strokes: score.strokes,
@@ -192,7 +206,10 @@ export const createRound = async (
           .insert(scoresData);
 
         if (scoresError) {
-          throw handleSupabaseError(scoresError, "Failed to create player scores");
+          throw handleSupabaseError(
+            scoresError,
+            "Failed to create player scores"
+          );
         }
       })
     );
@@ -220,9 +237,8 @@ export const updateScore = async (
 
     if (playerError || !roundPlayer) throw new Error("Round player not found");
 
-    const { error: scoreError } = await supabase
-      .from("player_scores")
-      .upsert({
+    const { error: scoreError } = await supabase.from("player_scores").upsert(
+      {
         round_player_id: roundPlayer.id,
         hole_number: holeNumber,
         strokes: scoreData.strokes,
@@ -233,14 +249,25 @@ export const updateScore = async (
         driving_distance: scoreData.drivingDistance,
         notes: scoreData.notes,
         updated_at: new Date(),
-      }, {
-        onConflict: 'round_player_id,hole_number'
-      });
+      },
+      {
+        onConflict: "round_player_id,hole_number",
+      }
+    );
 
     if (scoreError)
       throw handleSupabaseError(scoreError, "Failed to update score");
 
     await recalculatePlayerTotals(roundPlayer.id);
+
+    broadcast({
+      type: "score_update",
+      roundId,
+      userId,
+      holeNumber,
+      scoreData,
+    });
+
     return true;
   } catch (error) {
     if (error instanceof Error) throw error;
@@ -321,18 +348,17 @@ export const getRoundsByUserId = async (
           .from("round_players")
           .select("round_id")
           .eq("user_id", userId)
-      ).data?.map(rp => rp.round_id) || []
+      ).data?.map((rp) => rp.round_id) || []
     )
-    .order("date", { ascending: false })
-  
-  if  (limit) {
+    .order("date", { ascending: false });
+
+  if (limit) {
     data?.splice(limit);
   }
 
   if (error) throw handleSupabaseError(error, "Failed to get rounds");
   return (data || []).map(transformRoundData);
 };
-
 
 export const getRoundById = async (id: string): Promise<Round | null> => {
   try {
@@ -356,9 +382,11 @@ export const getRoundById = async (id: string): Promise<Round | null> => {
 
 export const getAllRounds = async (): Promise<Round[]> => {
   try {
-    const { data, error } = await supabase.from("rounds").select(ROUND_SELECT_FIELDS);
+    const { data, error } = await supabase
+      .from("rounds")
+      .select(ROUND_SELECT_FIELDS);
     if (error) throw handleSupabaseError(error, "Failed to get all rounds");
-    
+
     return data?.map(transformRoundData) || [];
   } catch (error) {
     if (error instanceof Error) throw error;
@@ -373,16 +401,17 @@ export const deleteAllRounds = async (): Promise<boolean> => {
       .from("rounds")
       .select("id")
       .limit(1000); // Limit to prevent timeout
-    
-    if (fetchError) throw handleSupabaseError(fetchError, "Failed to fetch rounds");
-    
+
+    if (fetchError)
+      throw handleSupabaseError(fetchError, "Failed to fetch rounds");
+
     if (rounds && rounds.length > 0) {
       // Delete each round individually
       for (const round of rounds) {
         await deleteRound(round.id);
       }
     }
-    
+
     return true;
   } catch (error) {
     if (error instanceof Error) throw error;

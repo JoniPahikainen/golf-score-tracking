@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -32,6 +32,10 @@ export const ScoreEntry = ({
 }: ScoreEntryProps) => {
   const { user } = useUser();
   const [players, setPlayers] = useState<User[]>(initialPlayers);
+  
+  useEffect(() => {
+    setPlayers(initialPlayers);
+  }, [initialPlayers]);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const navigate = useNavigate();
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<Set<string>>(
@@ -112,7 +116,9 @@ export const ScoreEntry = ({
           <h2 className="text-xl font-bold">
             {player.name} – Hole {holeIndex + 1}
           </h2>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Par {par}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Par {par}
+          </div>
           <div className="flex items-center justify-between">
             <Button
               className="rounded-full bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-gray-50 hover:bg-gray-400 dark:hover:bg-slate-600"
@@ -149,20 +155,20 @@ export const ScoreEntry = ({
     const renderScoreCell = (hole: Hole, index: number) => {
       const strokes = hole.strokes;
       const displayScore =
-        index <= currentHoleIndex
-          ? strokes === 0
-            ? ""
-            : strokes != null
-            ? strokes
-            : DEFAULT_PAR[index]
+        strokes === 0
+          ? ""
+          : strokes != null
+          ? strokes
           : "";
       const isCurrentHole = index === currentHoleIndex;
       const scoreDiff = strokes - DEFAULT_PAR[index];
       let scoreColorClass = "text-gray-900 dark:text-gray-50";
 
       if (strokes > 0) {
-        if (scoreDiff < 0) scoreColorClass = "text-green-600 dark:text-green-400";
-        else if (scoreDiff > 0) scoreColorClass = "text-red-600 dark:text-red-400";
+        if (scoreDiff < 0)
+          scoreColorClass = "text-green-600 dark:text-green-400";
+        else if (scoreDiff > 0)
+          scoreColorClass = "text-red-600 dark:text-red-400";
       }
 
       return (
@@ -193,15 +199,22 @@ export const ScoreEntry = ({
           ))}
         </div>
         <div className="grid grid-cols-10 gap-1 text-center">
-          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">Par</div>
+          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">
+            Par
+          </div>
           {parNumbers.slice(0, 9).map((par, i) => (
-            <div key={i} className="col-span-1 text-sm text-gray-700 dark:text-gray-200">
+            <div
+              key={i}
+              className="col-span-1 text-sm text-gray-700 dark:text-gray-200"
+            >
               {par}
             </div>
           ))}
         </div>
         <div className="grid grid-cols-10 gap-1 text-center">
-          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">Score</div>
+          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">
+            Score
+          </div>
           {player.holes.slice(0, 9).map((hole, i) => (
             <div key={i} className="col-span-1">
               {renderScoreCell(hole, i)}
@@ -218,17 +231,24 @@ export const ScoreEntry = ({
           ))}
         </div>
         <div className="grid grid-cols-10 gap-1 text-center">
-          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">Par</div>
+          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">
+            Par
+          </div>
           {parNumbers.slice(9, 18).map((par, i) => (
-            <div key={i} className="col-span-1 text-sm text-gray-700 dark:text-gray-200">
+            <div
+              key={i}
+              className="col-span-1 text-sm text-gray-700 dark:text-gray-200"
+            >
               {par}
             </div>
           ))}
         </div>
         <div className="grid grid-cols-10 gap-1 text-center">
-          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">Score</div>
+          <div className="col-span-1 font-bold text-gray-600 dark:text-gray-400">
+            Score
+          </div>
           {player.holes.slice(9, 18).map((hole, i) => (
-            <div key={i} className="col-span-1">
+            <div key={i + 9} className="col-span-1">
               {renderScoreCell(hole, i + 9)}
             </div>
           ))}
@@ -239,10 +259,8 @@ export const ScoreEntry = ({
 
   const logPlayerData = () => {
     players.forEach((player) => {
-      console.log(`Player: ${player.name}`);
       player.holes.forEach((hole) => {
         const strokesDisplay = hole.strokes === 0 ? " " : hole.strokes;
-        console.log(`  Hole ${hole.holeNumber}: Strokes = ${strokesDisplay}`);
       });
     });
   };
@@ -311,7 +329,9 @@ export const ScoreEntry = ({
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  <span className="font-bold text-gray-900 dark:text-gray-50">Score:</span>{" "}
+                  <span className="font-bold text-gray-900 dark:text-gray-50">
+                    Score:
+                  </span>{" "}
                   {scoreDisplay}
                 </div>
                 <Button

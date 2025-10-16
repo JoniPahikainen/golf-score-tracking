@@ -13,7 +13,15 @@
     "dev": "ts-node-dev src/index.ts",
     "start": "ts-node src/index.ts"
   },
-  "keywords": ["golf", "score", "tracking", "api", "express", "typescript", "supabase"],
+  "keywords": [
+    "golf",
+    "score",
+    "tracking",
+    "api",
+    "express",
+    "typescript",
+    "supabase"
+  ],
   "author": "Joni Pahikainen",
   "license": "MIT",
   "repository": {
@@ -24,11 +32,14 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
     "@types/express": "4.17.21",
+    "@types/socket.io": "^3.0.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "4.18.2",
     "jsonwebtoken": "^8.5.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "zod": "^4.0.17"
   },
   "devDependencies": {
