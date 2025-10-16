@@ -15,6 +15,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Logging middleware for all API calls
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`${timestamp} ${req.method} ${req.path}`, req.body);
+  next();
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -32,14 +39,16 @@ const wss = new WebSocketServer({ server });
 const clients = new Set<WebSocket>();
 
 wss.on("connection", (ws) => {
+  console.log("WebSocket client connected. Total clients:", clients.size + 1);
   clients.add(ws);
 
   ws.on("close", () => {
+    console.log("WebSocket client disconnected. Total clients:", clients.size - 1);
     clients.delete(ws);
   });
 
   ws.on("error", (error) => {
-    console.error("WebSocket Server Error:", error);
+    console.error("WebSocket error:", error);
   });
 });
 
@@ -56,7 +65,10 @@ function broadcast(data: any) {
 }
 
 if (require.main === module) {
-  server.listen(PORT, () => {});
+  server.listen(PORT, () => {
+    console.log("Server running on http://localhost:" + PORT);
+    console.log("WebSocket server running on ws://localhost:" + PORT);
+  });
 }
 
 export { app, wss, broadcast };
